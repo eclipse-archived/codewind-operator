@@ -1,0 +1,10 @@
+###  Example of creating a Codewind service
+apiVersion: codewind.eclipse.org/v1alpha1
+kind: Codewind
+metadata:
+  name: codewind-k81235kj
+spec:
+  size: 1
+  workspaceID: k81235kj
+  keycloakDeployment: devex-0001
+  username: cody-sprint

@@ -1,0 +1,8 @@
+###  Example of creating a Keycloak service
+apiVersion: codewind.eclipse.org/v1alpha1
+kind: Keycloak
+metadata:
+  name: codewind-keycloak-k3a237fj
+spec:
+  workspaceID: k3a237fj
+  deploymentRef: devex-0001
