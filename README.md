@@ -19,7 +19,7 @@ Results in a new Keycloak service being created and accessible via kubectl:
 ```bash
 $ kubectl get keycloaks
 NAME                         DEPLOYMENT   NAMESPACE   AGE   ACCESS
-codewind-keycloak-k3a237fj   devex-0001   default     15s   https://codewind-keycloak-k3a237fj.10.98.191.164.nip.io
+codewind-keycloak-k3a237fj   devex-0001   codewind    15s   https://codewind-keycloak-k3a237fj.10.98.191.164.nip.io
 ```
 
 This Keycloak instance will be created along with:
