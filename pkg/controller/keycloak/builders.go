@@ -112,7 +112,7 @@ func (r *ReconcileKeycloak) serviceForKeycloak(keycloak *codewindv1alpha1.Keyclo
 }
 
 // deploymentForKeycloak returns a Keycloak object
-func (r *ReconcileKeycloak) deploymentForKeycloak(keycloak *codewindv1alpha1.Keycloak /*, volumeMounts []corev1.VolumeMount, envVars []corev1.EnvVar*/) *appsv1.Deployment {
+func (r *ReconcileKeycloak) deploymentForKeycloak(keycloak *codewindv1alpha1.Keycloak) *appsv1.Deployment {
 	ls := labelsForKeycloak(keycloak.Name)
 	replicas := int32(1)
 

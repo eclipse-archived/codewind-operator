@@ -7,4 +7,6 @@ spec:
   size: 1
   workspaceID: k81235kj
   keycloakDeployment: devex-0001
+  ## TODO: Add a keycloakDeployment url instead of just the keycloakDeployment reference
+  ingressDomain: 10.100.111.145.nip.io
   username: cody-sprint

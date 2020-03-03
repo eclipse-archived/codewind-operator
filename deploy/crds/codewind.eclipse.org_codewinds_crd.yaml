@@ -52,16 +52,24 @@ spec:
         spec:
           description: CodewindSpec defines the desired state of Codewind
           properties:
+            ingressDomain:
+              description: Ingress domain
+              type: string
             keycloakDeployment:
-              description: 'Important: Run "operator-sdk generate k8s" to regenerate
-                code after modifying this file'
+              description: 'KeycloakDeployment : name of the keycloak deployment used
+                by this instance of codewind'
               type: string
             username:
               description: Developer username assigned to this instance
               type: string
+            workspaceID:
+              description: 'WorkspaceID: ident of this deployment'
+              type: string
           required:
+          - ingressDomain
           - keycloakDeployment
           - username
+          - workspaceID
           type: object
         status:
           description: CodewindStatus defines the observed state of Codewind

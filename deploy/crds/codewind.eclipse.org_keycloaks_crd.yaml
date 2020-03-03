@@ -49,13 +49,17 @@ spec:
           description: KeycloakSpec defines the desired state of Keycloak
           properties:
             deploymentRef:
+              description: 'DeploymentReference : A reference name for this instance'
+              type: string
+            ingressDomain:
+              description: 'IngressDomain : Ingress domain of this instance'
               type: string
             workspaceID:
-              description: 'Important: Run "operator-sdk generate k8s" to regenerate
-                code after modifying this file'
+              description: 'WorkspaceID : A workspace reference ID for this instance'
               type: string
           required:
           - deploymentRef
+          - ingressDomain
           - workspaceID
           type: object
         status:

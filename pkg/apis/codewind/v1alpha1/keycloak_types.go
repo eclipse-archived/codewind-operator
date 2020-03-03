@@ -7,8 +7,15 @@ import (
 // KeycloakSpec defines the desired state of Keycloak
 type KeycloakSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	WorkspaceID         string `json:"workspaceID"`
+
+	// WorkspaceID : A workspace reference ID for this instance
+	WorkspaceID string `json:"workspaceID"`
+
+	// DeploymentReference : A reference name for this instance
 	DeploymentReference string `json:"deploymentRef"`
+
+	// IngressDomain : Ingress domain of this instance
+	IngressDomain string `json:"ingressDomain"`
 }
 
 // KeycloakStatus defines the observed state of Keycloak

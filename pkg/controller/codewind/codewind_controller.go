@@ -4,15 +4,13 @@ import (
 	"context"
 
 	codewindv1alpha1 "github.com/eclipse/codewind-operator/pkg/apis/codewind/v1alpha1"
-	"github.com/eclipse/codewind-operator/pkg/controller/defaults"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -64,8 +62,6 @@ var _ reconcile.Reconciler = &ReconcileCodewind{}
 
 // ReconcileCodewind reconciles a Codewind object
 type ReconcileCodewind struct {
-	// This client, initialized using mgr.Client() above, is a split client
-	// that reads objects from the cache and writes to the apiserver
 	client client.Client
 	scheme *runtime.Scheme
 }
@@ -80,66 +76,101 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	reqLogger.Info("Reconciling Codewind")
 
 	// Fetch the Codewind instance
-	instance := &codewindv1alpha1.Codewind{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
+	codewind := &codewindv1alpha1.Codewind{}
+	err := r.client.Get(context.TODO(), request.NamespacedName, codewind)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			// Request object not found, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected
-			// Return and don't requeue
+			reqLogger.Info("Codewind resource not found. Ignoring since object must be deleted.")
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
+		reqLogger.Error(err, "Failed to get Codewind.")
 		return reconcile.Result{}, err
 	}
 
-	// Define a new Pod object
-	pod := newPodForCR(instance)
-
-	// Set Codewind instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	// Check if this Pod already exists
-	found := &corev1.Pod{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
+	// Check if the Codewind Service account already exist, if not create new ones
+	serviceAccount := &corev1.ServiceAccount{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, serviceAccount)
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
-		err = r.client.Create(context.TODO(), pod)
+		// Define a new serviceAccount object
+		newServiceAccount := r.serviceAccountForCodewind(codewind)
+		reqLogger.Info("Creating a new service account", "Namespace", newServiceAccount.Namespace, "Name", newServiceAccount.Name)
+		err = r.client.Create(context.TODO(), newServiceAccount)
 		if err != nil {
+			reqLogger.Error(err, "Failed to create new Secret.", "Namespace", newServiceAccount.Namespace, "Name", newServiceAccount.Name)
 			return reconcile.Result{}, err
 		}
-
-		// Pod created successfully - don't requeue
-		return reconcile.Result{}, nil
 	} else if err != nil {
+		reqLogger.Error(err, "Failed to get service account.")
 		return reconcile.Result{}, err
 	}
 
-	// Pod already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
-	return reconcile.Result{}, nil
-}
+	// Check if the Codewind PVC already exist, if not create a new one
+	codewindPVC := &corev1.PersistentVolumeClaim{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-pfe-pvc-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, codewindPVC)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new Secrets object
+		newCodewindPVC := r.pvcForCodewind(codewind)
+		reqLogger.Info("Creating a new Codewind PFE PVC", "Namespace", newCodewindPVC.Namespace, "Name", newCodewindPVC.Name)
+		err = r.client.Create(context.TODO(), newCodewindPVC)
+		if err != nil {
+			reqLogger.Error(err, "Failed to create new PFE PVC.", "Namespace", newCodewindPVC.Namespace, "Name", newCodewindPVC.Name)
+			return reconcile.Result{}, err
+		}
+	} else if err != nil {
+		reqLogger.Error(err, "Failed to get PFE PVC.")
+		return reconcile.Result{}, err
+	}
 
-// newPodForCR returns a busybox pod with the same name/namespace as the cr
-func newPodForCR(codewind *codewindv1alpha1.Codewind) *corev1.Pod {
-	labels := map[string]string{
-		"app": codewind.Name,
+	// Check if the Codewind PFE Deployment already exists, if not create a new one
+	deployment := &appsv1.Deployment{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-pfe-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, deployment)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new Deployment
+
+		// TODO - pull these from the keycloak service
+		keycloakRealm := "codewind"
+		authHost := "https://keycloak......."
+		logLevel := "info"
+		isOnOpenshift := false
+
+		dep := r.deploymentForCodewindPFE(codewind, isOnOpenshift, keycloakRealm, authHost, logLevel)
+		reqLogger.Info("The workspace ID of this is:", "WorkspaceID", codewind.Spec.WorkspaceID)
+		reqLogger.Info("Creating a new PFE Deployment.", "Namespace", dep.Namespace, "Name", dep.Name)
+		err = r.client.Create(context.TODO(), dep)
+		if err != nil {
+			reqLogger.Error(err, "Failed to create new Deployment.", "Namespace", dep.Namespace, "Name", dep.Name)
+			return reconcile.Result{}, err
+		}
+		// Deployment created successfully - return and requeue
+		// TODO: GET the deployment object again instead of requeuing it see: https://godoc.org/sigs.k8s.io/controller-runtime/pkg/reconcile#Reconciler
+		return reconcile.Result{Requeue: true}, nil
+	} else if err != nil {
+		reqLogger.Error(err, "Failed to get PFE Deployment.")
+		return reconcile.Result{}, err
 	}
-	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      codewind.Name + "-pod",
-			Namespace: codewind.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:  "codewind-pfe" + codewind.Name,
-					Image: defaults.CodewindImage + ":" + defaults.CodewindImageTag,
-				},
-			},
-		},
+
+	// Check if the Codewind PFE Service already exists, if not create a new one
+	service := &corev1.Service{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-pfe-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, service)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new Service object
+		ser := r.serviceForCodewindPFE(codewind)
+		reqLogger.Info("Creating a new Service", "Namespace", ser.Namespace, "Name", ser.Name)
+		err = r.client.Create(context.TODO(), ser)
+		if err != nil {
+			reqLogger.Error(err, "Failed to create new Service.", "Namespace", ser.Namespace, "Name", ser.Name)
+			return reconcile.Result{}, err
+		}
+	} else if err != nil {
+		reqLogger.Error(err, "Failed to get Service.")
+		return reconcile.Result{}, err
 	}
+
+	err = r.client.Status().Update(context.TODO(), codewind)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	return reconcile.Result{}, nil
 }

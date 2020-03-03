@@ -28,5 +28,5 @@ const (
 
 // GetCurrentIngressDomain : the current ingress domain of the cluster
 func GetCurrentIngressDomain() string {
-	return "10.98.191.164.nip.io"
+	return "10.100.111.145.nip.io"
 }

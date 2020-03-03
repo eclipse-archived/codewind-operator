@@ -7,10 +7,14 @@ import (
 // CodewindSpec defines the desired state of Codewind
 type CodewindSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
+	// WorkspaceID: ident of this deployment
+	WorkspaceID string `json:"workspaceID"`
+	// KeycloakDeployment : name of the keycloak deployment used by this instance of codewind
 	KeycloakDeployment string `json:"keycloakDeployment"`
 	// Developer username assigned to this instance
 	Username string `json:"username"`
-	// AuthRef is the DeploymentRef of the keycloak instance used by this instance of codewin
+	// Ingress domain
+	IngressDomain string `json:"ingressDomain"`
 }
 
 // CodewindStatus defines the observed state of Codewind
