@@ -8,8 +8,10 @@ import (
 	defaults "github.com/eclipse/codewind-operator/pkg/controller/defaults"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -435,6 +437,62 @@ func (r *ReconcileCodewind) deploymentForCodewindGatekeeper(codewind *codewindv1
 	// Set Codewind instance as the owner of the Deployment.
 	controllerutil.SetControllerReference(codewind, dep, r.scheme)
 	return dep
+}
+
+// ingressForCodewindGatekeeper function takes in a Codewind object and returns an Ingress for the gatekeeper.
+func (r *ReconcileCodewind) ingressForCodewindGatekeeper(codewind *codewindv1alpha1.Codewind) *extensionsv1beta1.Ingress {
+	ls := labelsForCodewindGatekeeper(codewind)
+	annotations := map[string]string{
+		"nginx.ingress.kubernetes.io/rewrite-target":     "/",
+		"ingress.bluemix.net/redirect-to-https":          "True",
+		"ingress.bluemix.net/ssl-services":               "ssl-service=codewind-gatekeeper-" + codewind.Spec.WorkspaceID,
+		"nginx.ingress.kubernetes.io/backend-protocol":   "HTTPS",
+		"kubernetes.io/ingress.class":                    "nginx",
+		"nginx.ingress.kubernetes.io/force-ssl-redirect": "true",
+	}
+
+	ingress := &extensionsv1beta1.Ingress{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "extensions/v1beta1",
+			Kind:       "Ingress",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "codewind-gatekeeper-" + codewind.Spec.WorkspaceID,
+			Annotations: annotations,
+			Namespace:   codewind.Namespace,
+			Labels:      ls,
+		},
+		Spec: extensionsv1beta1.IngressSpec{
+			TLS: []extensionsv1beta1.IngressTLS{
+				{
+					Hosts:      []string{"codewind-gatekeeper." + codewind.Spec.IngressDomain},
+					SecretName: "secret-codewind-tls" + "-" + codewind.Spec.WorkspaceID,
+				},
+			},
+			Rules: []extensionsv1beta1.IngressRule{
+				{
+					Host: "codewind-gatekeeper" + codewind.Spec.IngressDomain,
+					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
+						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
+							Paths: []extensionsv1beta1.HTTPIngressPath{
+								{
+									Path: "/",
+									Backend: extensionsv1beta1.IngressBackend{
+										ServiceName: "codewind-gatekeeper" + "-" + codewind.Spec.WorkspaceID,
+										ServicePort: intstr.FromInt(defaults.GatekeeperContainerPort),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// Set Keycloak instance as the owner of the Service.
+	controllerutil.SetControllerReference(codewind, ingress, r.scheme)
+	return ingress
 }
 
 // labelsForCodewindPFE returns the labels for selecting the resources

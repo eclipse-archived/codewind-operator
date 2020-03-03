@@ -8,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	extensionsv1 "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -286,6 +287,22 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		}
 	} else if err != nil {
 		reqLogger.Error(err, "Failed to get Service.")
+		return reconcile.Result{}, err
+	}
+
+	// Check if the Codewind Gatekeeper Ingress already exists, if not create a new one
+	ingressGatekeeper := &extensionsv1.Ingress{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-gatekeeper-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, ingressGatekeeper)
+	if err != nil && errors.IsNotFound(err) {
+		newService := r.ingressForCodewindGatekeeper(codewind)
+		reqLogger.Info("Creating a new Codewind gatekeeper ingress", "Namespace", newService.Namespace, "Name", newService.Name)
+		err = r.client.Create(context.TODO(), newService)
+		if err != nil {
+			reqLogger.Error(err, "Failed to create new Codewind gatekeeper ingress.", "Namespace", newService.Namespace, "Name", newService.Name)
+			return reconcile.Result{}, err
+		}
+	} else if err != nil {
+		reqLogger.Error(err, "Failed to get Codewind gatekeeper ingress")
 		return reconcile.Result{}, err
 	}
 
