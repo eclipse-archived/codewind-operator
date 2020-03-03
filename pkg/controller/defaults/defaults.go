@@ -19,7 +19,7 @@ const (
 	// KeycloakImageTag is the Image tag used by Keycloak
 	KeycloakImageTag = "0.9.0"
 
-	// CodewindImage is the docker image that will be used in the Codewind-Keycloak pod
+	// CodewindImage is the docker image that will be used in the Codewind-pfe pod
 	CodewindImage = "eclipse/codewind-pfe-amd64"
 
 	// CodewindImageTag is the Image tag used by Codewind
@@ -27,4 +27,16 @@ const (
 
 	// PFEStorageSize is the size of the PVC used by Codewind PFE
 	PFEStorageSize = "10Gi"
+
+	// CodewindPerformanceImage is the docker image that will be used in the Codewind-Performance pod
+	CodewindPerformanceImage = "eclipse/codewind-performance-amd64"
+
+	// CodewindPerformanceImageTag is the Image tag used by Codewind
+	CodewindPerformanceImageTag = "0.9.0"
+
+	// CodewindGatekeeperImage is the docker image that will be used in the Codewind-Gatekeeper pod
+	CodewindGatekeeperImage = "eclipse/codewind-gatekeeper-amd64"
+
+	// CodewindGatekeeperImageTag is the Image tag used by Codewind
+	CodewindGatekeeperImageTag = "0.9.0"
 )

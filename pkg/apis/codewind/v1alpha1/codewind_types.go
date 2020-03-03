@@ -17,6 +17,8 @@ type CodewindSpec struct {
 	IngressDomain string `json:"ingressDomain"`
 	// Codewind Storage size
 	StorageSize string `json:"storageSize"`
+	// LogLevel within pods
+	LogLevel string `json:"logLevel"`
 }
 
 // CodewindStatus defines the observed state of Codewind

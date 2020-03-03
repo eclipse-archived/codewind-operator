@@ -8,5 +8,6 @@ spec:
   workspaceID: k81235kj
   keycloakDeployment: devex-0001
   ingressDomain: 10.100.111.145.nip.io
-  username: cody-sprint
+  logLevel: info
+  username: cody-sprint2
   storageSize: 10Gi

@@ -30,7 +30,7 @@ func (r *ReconcileCodewind) serviceAccountForCodewind(codewind *codewindv1alpha1
 		Secrets: nil,
 	}
 
-	// Set Keycloak instance as the owner of the service account.
+	// Set Codewind instance as the owner of the service account.
 	controllerutil.SetControllerReference(codewind, serviceAccount, r.scheme)
 	return serviceAccount
 }
@@ -66,15 +66,71 @@ func (r *ReconcileCodewind) pvcForCodewind(codewind *codewindv1alpha1.Codewind) 
 		},
 	}
 
-	// Set Keycloak instance as the owner of the persistent volume claim.
+	// Set Codewind instance as the owner of the persistent volume claim.
 	controllerutil.SetControllerReference(codewind, pvc, r.scheme)
 	return pvc
+}
+
+func (r *ReconcileCodewind) deploymentForCodewindPerformance(codewind *codewindv1alpha1.Codewind) *appsv1.Deployment {
+	ls := labelsForCodewindPerformance(codewind)
+	replicas := int32(1)
+
+	dep := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "codewind-performance-" + codewind.Spec.WorkspaceID,
+			Namespace: codewind.Namespace,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: ls,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: ls,
+				},
+				Spec: corev1.PodSpec{
+					ServiceAccountName: "codewind-" + codewind.Spec.WorkspaceID,
+					Containers: []corev1.Container{{
+						Name:            "codewind-performance",
+						Image:           defaults.CodewindPerformanceImage + ":" + defaults.CodewindPerformanceImageTag,
+						ImagePullPolicy: corev1.PullAlways,
+						Env: []corev1.EnvVar{
+							{
+								Name:  "IN_K8",
+								Value: "true",
+							},
+							{
+								Name:  "PORTAL_HTTPS",
+								Value: "false",
+							},
+							{
+								Name:  "CODEWIND_INGRESS",
+								Value: "codewind-performance-" + codewind.Spec.WorkspaceID + "." + codewind.Spec.IngressDomain,
+							},
+						},
+						Ports: []corev1.ContainerPort{
+							{ContainerPort: int32(defaults.PerformanceContainerPort)},
+						},
+					}},
+				},
+			},
+		},
+	}
+	// Set Codewind instance as the owner of this deployment
+	controllerutil.SetControllerReference(codewind, dep, r.scheme)
+	return dep
 }
 
 // deploymentForCodewindPFE returns a Codewind dployment object
 func (r *ReconcileCodewind) deploymentForCodewindPFE(codewind *codewindv1alpha1.Codewind, isOnOpenshift bool, keycloakRealm string, authHost string, logLevel string /*, volumeMounts []corev1.VolumeMount*/) *appsv1.Deployment {
 	ls := labelsForCodewindPFE(codewind)
 	replicas := int32(1)
+
+	loglevel := "info"
+	if codewind.Spec.LogLevel != "" {
+		loglevel = codewind.Spec.LogLevel
+	}
 
 	volumes := []corev1.Volume{
 		{
@@ -209,7 +265,7 @@ func (r *ReconcileCodewind) deploymentForCodewindPFE(codewind *codewindv1alpha1.
 							},
 							{
 								Name:  "LOG_LEVEL",
-								Value: logLevel,
+								Value: loglevel,
 							},
 						},
 						Ports: []corev1.ContainerPort{
@@ -220,12 +276,12 @@ func (r *ReconcileCodewind) deploymentForCodewindPFE(codewind *codewindv1alpha1.
 			},
 		},
 	}
-	// Set Keycloak instance as the owner of the Deployment.
+	// Set Codewind instance as the owner of the Deployment.
 	controllerutil.SetControllerReference(codewind, dep, r.scheme)
 	return dep
 }
 
-// serviceForCodewindPFE function takes in a Codewind PFE object and returns a Service for that object.
+// serviceForCodewindPFE function takes in a Codewind object and returns a PFE Service for that object.
 func (r *ReconcileCodewind) serviceForCodewindPFE(codewind *codewindv1alpha1.Codewind) *corev1.Service {
 	ls := labelsForCodewindPFE(codewind)
 	service := &corev1.Service{
@@ -243,13 +299,154 @@ func (r *ReconcileCodewind) serviceForCodewindPFE(codewind *codewindv1alpha1.Cod
 			},
 		},
 	}
+	// Set Codewind instance as the owner of the Service.
+	controllerutil.SetControllerReference(codewind, service, r.scheme)
+	return service
+}
+
+// serviceForCodewindPerformance function takes in a Codewind  object and returns a Performance Service for that object.
+func (r *ReconcileCodewind) serviceForCodewindPerformance(codewind *codewindv1alpha1.Codewind) *corev1.Service {
+	ls := labelsForCodewindPerformance(codewind)
+	service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "codewind-performance-" + codewind.Spec.WorkspaceID,
+			Namespace: codewind.Namespace,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: ls,
+			Ports: []corev1.ServicePort{
+				{
+					Port: int32(defaults.PerformanceContainerPort),
+					Name: "codewind-performance-http",
+				},
+			},
+		},
+	}
+	// Set Codewind instance as the owner of the Service.
+	controllerutil.SetControllerReference(codewind, service, r.scheme)
+	return service
+}
+
+// serviceForCodewindGatekeeper function takes in a Codewind object and returns a Gatekeeper Service for that object.
+func (r *ReconcileCodewind) serviceForCodewindGatekeeper(codewind *codewindv1alpha1.Codewind) *corev1.Service {
+	ls := labelsForCodewindPerformance(codewind)
+	service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "codewind-gatekeeper-" + codewind.Spec.WorkspaceID,
+			Namespace: codewind.Namespace,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: ls,
+			Ports: []corev1.ServicePort{
+				{
+					Port: int32(defaults.PerformanceContainerPort),
+					Name: "codewind-gatekeeper-http",
+				},
+			},
+		},
+	}
 	// Set Keycloak instance as the owner of the Service.
 	controllerutil.SetControllerReference(codewind, service, r.scheme)
 	return service
+}
+
+// deploymentForCodewindGatekeeper returns a Codewind dployment object
+func (r *ReconcileCodewind) deploymentForCodewindGatekeeper(codewind *codewindv1alpha1.Codewind, isOnOpenshift bool, keycloakRealm string, keycloakClientID string, keycloakAuthURL string) *appsv1.Deployment {
+	ls := labelsForCodewindGatekeeper(codewind)
+	replicas := int32(1)
+
+	dep := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "codewind-gatekeeper-" + codewind.Spec.WorkspaceID,
+			Namespace: codewind.Namespace,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: ls,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: ls,
+				},
+				Spec: corev1.PodSpec{
+					ServiceAccountName: "codewind-" + codewind.Spec.WorkspaceID,
+					Containers: []corev1.Container{{
+						Name:            "codewind-gatekeeper",
+						Image:           defaults.CodewindGatekeeperImage + ":" + defaults.CodewindGatekeeperImageTag,
+						ImagePullPolicy: corev1.PullAlways,
+						Env: []corev1.EnvVar{
+							{
+								Name:  "AUTH_URL",
+								Value: keycloakAuthURL,
+							},
+							{
+								Name:  "CLIENT_ID",
+								Value: keycloakClientID,
+							},
+							{
+								Name:  "REALM",
+								Value: keycloakRealm,
+							},
+							{
+								Name:  "ENABLE_AUTH",
+								Value: "1",
+							},
+							{
+								Name:  "GATEKEEPER_HOST",
+								Value: "codewind-gatekeeper" + codewind.Spec.IngressDomain,
+							},
+
+							{
+								Name:  "WORKSPACE_SERVICE",
+								Value: "CODEWIND_PFE_" + codewind.Spec.WorkspaceID,
+							},
+							{
+								Name:  "WORKSPACE_ID",
+								Value: codewind.Spec.WorkspaceID,
+							},
+							{
+								Name:  "ACCESS_ROLE",
+								Value: "codewind-" + codewind.Spec.WorkspaceID,
+							},
+							{
+								Name: "CLIENT_SECRET",
+								ValueFrom: &corev1.EnvVarSource{
+									SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "secret-codewind-client" + "-" + codewind.Spec.WorkspaceID}, Key: "client_secret"}},
+							},
+							{
+								Name: "SESSION_SECRET",
+								ValueFrom: &corev1.EnvVarSource{
+									SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "secret-codewind-session" + "-" + codewind.Spec.WorkspaceID}, Key: "session_secret"}},
+							},
+							{
+								Name:  "PORTAL_HTTPS",
+								Value: "true",
+							},
+						},
+						Ports: []corev1.ContainerPort{
+							{ContainerPort: int32(defaults.PFEContainerPort)},
+						},
+					}},
+				},
+			},
+		},
+	}
+	// Set Codewind instance as the owner of the Deployment.
+	controllerutil.SetControllerReference(codewind, dep, r.scheme)
+	return dep
 }
 
 // labelsForCodewindPFE returns the labels for selecting the resources
 // belonging to the given codewind CR name.
 func labelsForCodewindPFE(codewind *codewindv1alpha1.Codewind) map[string]string {
 	return map[string]string{"app": "codewind-pfe", "codewind_cr": codewind.Name, "codewindWorkspace": codewind.Spec.WorkspaceID}
+}
+
+func labelsForCodewindPerformance(codewind *codewindv1alpha1.Codewind) map[string]string {
+	return map[string]string{"app": "codewind-performance", "codewind_performance_cr": "codewind-performance-" + codewind.Spec.WorkspaceID, "codewindWorkspace": codewind.Spec.WorkspaceID}
+}
+
+func labelsForCodewindGatekeeper(codewind *codewindv1alpha1.Codewind) map[string]string {
+	return map[string]string{"app": "codewind-gatekeeper", "codewind_gatekeeper_cr": "codewind-gatekeeper-" + codewind.Spec.WorkspaceID, "codewindWorkspace": codewind.Spec.WorkspaceID}
 }
