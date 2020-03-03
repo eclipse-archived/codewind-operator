@@ -1,6 +1,6 @@
 module github.com/eclipse/codewind-operator
 
-go 1.13
+go 1.13 // TODO: jenkins currently using 1.12
 
 require (
 	github.com/eclipse/codewind-installer v0.8.0

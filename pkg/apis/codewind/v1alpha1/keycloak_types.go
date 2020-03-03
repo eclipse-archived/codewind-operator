@@ -14,7 +14,7 @@ type KeycloakSpec struct {
 	// DeploymentReference : A reference name for this instance
 	DeploymentReference string `json:"deploymentRef"`
 
-	// IngressDomain : Ingress domain of this instance
+	// IngressDomain : Ingress domain suffix for Keycloak
 	IngressDomain string `json:"ingressDomain"`
 }
 
