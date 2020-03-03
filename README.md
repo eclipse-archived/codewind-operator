@@ -12,6 +12,7 @@ metadata:
 spec:
   workspaceID: k3a237fj
   deploymentRef: devex-0001
+  ingressDomain: 10.100.111.145.nip.io
 ```
 
 Results in a new Keycloak service being created and accessible via kubectl:
@@ -19,7 +20,7 @@ Results in a new Keycloak service being created and accessible via kubectl:
 ```bash
 $ kubectl get keycloaks
 NAME                         DEPLOYMENT   NAMESPACE   AGE   ACCESS
-codewind-keycloak-k3a237fj   devex-0001   codewind    15s   https://codewind-keycloak-k3a237fj.10.98.191.164.nip.io
+codewind-keycloak-k3a237fj   devex-0001   codewind    28m   https://codewind-keycloak-k3a237fj.10.100.111.145.nip.io
 ```
 
 This Keycloak instance will be created along with:
@@ -72,7 +73,9 @@ spec:
   size: 1
   workspaceID: k81235kj
   keycloakDeployment: devex-0001
+  ingressDomain: 10.100.111.145.nip.io
   username: cody-sprint
+  storageSize: 10Gi
 ```
 
 Results in a new Codewind deployment and accessible via kubectl:

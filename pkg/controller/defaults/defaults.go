@@ -24,9 +24,7 @@ const (
 
 	// CodewindImageTag is the Image tag used by Codewind
 	CodewindImageTag = "0.9.0"
-)
 
-// GetCurrentIngressDomain : the current ingress domain of the cluster
-func GetCurrentIngressDomain() string {
-	return "10.100.111.145.nip.io"
-}
+	// PFEStorageSize is the size of the PVC used by Codewind PFE
+	PFEStorageSize = "10Gi"
+)

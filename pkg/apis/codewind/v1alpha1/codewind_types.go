@@ -15,6 +15,8 @@ type CodewindSpec struct {
 	Username string `json:"username"`
 	// Ingress domain
 	IngressDomain string `json:"ingressDomain"`
+	// Codewind Storage size
+	StorageSize string `json:"storageSize"`
 }
 
 // CodewindStatus defines the observed state of Codewind

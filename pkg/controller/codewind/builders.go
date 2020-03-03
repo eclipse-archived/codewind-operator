@@ -38,6 +38,12 @@ func (r *ReconcileCodewind) serviceAccountForCodewind(codewind *codewindv1alpha1
 // pvcForCodewind function takes in a Codewind object and returns a PVC for that object.
 func (r *ReconcileCodewind) pvcForCodewind(codewind *codewindv1alpha1.Codewind) *corev1.PersistentVolumeClaim {
 	labels := labelsForCodewindPFE(codewind)
+
+	storageSize := defaults.PFEStorageSize
+	if codewind.Spec.StorageSize != "" {
+		storageSize = codewind.Spec.StorageSize
+	}
+
 	pvc := &corev1.PersistentVolumeClaim{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -54,7 +60,7 @@ func (r *ReconcileCodewind) pvcForCodewind(codewind *codewindv1alpha1.Codewind) 
 			},
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
-					corev1.ResourceStorage: resource.MustParse("10Gi"),
+					corev1.ResourceStorage: resource.MustParse(storageSize),
 				},
 			},
 		},
@@ -181,13 +187,13 @@ func (r *ReconcileCodewind) deploymentForCodewindPFE(codewind *codewindv1alpha1.
 								Name:  "CODEWIND_PERFORMANCE_SERVICE",
 								Value: "codewind-performance-" + codewind.Spec.WorkspaceID,
 							},
-							// {
-							// 	Name:  "CHE_INGRESS_HOST",
-							// 	Value: "codewind-gatekeeper" + "." + codewind.Ingress,
-							// },
+							{
+								Name:  "CHE_INGRESS_HOST",
+								Value: "codewind-gatekeeper" + "." + codewind.Spec.IngressDomain,
+							},
 							{
 								Name:  "INGRESS_PREFIX",
-								Value: codewind.Namespace + "." + defaults.GetCurrentIngressDomain(), // provides access to project containers
+								Value: codewind.Namespace + "." + codewind.Spec.IngressDomain, // provides access to project containers
 							},
 							{
 								Name:  "ON_OPENSHIFT",

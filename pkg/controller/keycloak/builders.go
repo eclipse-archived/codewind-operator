@@ -208,13 +208,13 @@ func (r *ReconcileKeycloak) ingressForKeycloak(keycloak *codewindv1alpha1.Keyclo
 		Spec: extv1beta1.IngressSpec{
 			TLS: []extv1beta1.IngressTLS{
 				{
-					Hosts:      []string{"codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + defaults.GetCurrentIngressDomain()},
+					Hosts:      []string{"codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + keycloak.Spec.IngressDomain},
 					SecretName: "secret-keycloak-tls" + "-" + keycloak.Spec.WorkspaceID,
 				},
 			},
 			Rules: []extv1beta1.IngressRule{
 				{
-					Host: "codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + defaults.GetCurrentIngressDomain(),
+					Host: "codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + keycloak.Spec.IngressDomain,
 					IngressRuleValue: extv1beta1.IngressRuleValue{
 						HTTP: &extv1beta1.HTTPIngressRuleValue{
 							Paths: []extv1beta1.HTTPIngressPath{

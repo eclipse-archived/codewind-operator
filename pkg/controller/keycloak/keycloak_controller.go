@@ -4,7 +4,6 @@ import (
 	"context"
 
 	codewindv1alpha1 "github.com/eclipse/codewind-operator/pkg/apis/codewind/v1alpha1"
-	"github.com/eclipse/codewind-operator/pkg/controller/defaults"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -188,7 +187,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 		reqLogger.Info("Creating a new Ingress", "Namespace", ing.Namespace, "Name", ing.Name)
 
 		// Update the accessURL
-		keycloak.Status.AccessURL = "https://codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + defaults.GetCurrentIngressDomain()
+		keycloak.Status.AccessURL = "https://codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + keycloak.Spec.IngressDomain
 		err = r.client.Create(context.TODO(), ing)
 		if err != nil {
 			reqLogger.Error(err, "Failed to create new Ingress.", "Namespace", ing.Namespace, "Name", ing.Name)
