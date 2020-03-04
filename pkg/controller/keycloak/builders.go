@@ -14,7 +14,7 @@ import (
 
 // serviceAccountForKeycloak function takes in a Keycloak object and returns a serviceAccount for that object.
 func (r *ReconcileKeycloak) serviceAccountForKeycloak(keycloak *codewindv1alpha1.Keycloak) *corev1.ServiceAccount {
-	ls := labelsForKeycloak(keycloak.Name)
+	ls := labelsForKeycloak(keycloak)
 
 	serviceAccount := &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
@@ -36,7 +36,7 @@ func (r *ReconcileKeycloak) serviceAccountForKeycloak(keycloak *codewindv1alpha1
 
 // pvcForKeycloak function takes in a Keycloak object and returns a PVC for that object.
 func (r *ReconcileKeycloak) pvcForKeycloak(keycloak *codewindv1alpha1.Keycloak) *corev1.PersistentVolumeClaim {
-	ls := labelsForKeycloak(keycloak.Name)
+	ls := labelsForKeycloak(keycloak)
 
 	pvc := &corev1.PersistentVolumeClaim{
 		TypeMeta: metav1.TypeMeta{
@@ -67,7 +67,7 @@ func (r *ReconcileKeycloak) pvcForKeycloak(keycloak *codewindv1alpha1.Keycloak) 
 
 // secretsForKeycloak function takes in a Keycloak object and returns a Secret for that object.
 func (r *ReconcileKeycloak) secretsForKeycloak(keycloak *codewindv1alpha1.Keycloak) *corev1.Secret {
-	ls := labelsForKeycloak(keycloak.Name)
+	ls := labelsForKeycloak(keycloak)
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
@@ -90,7 +90,7 @@ func (r *ReconcileKeycloak) secretsForKeycloak(keycloak *codewindv1alpha1.Keyclo
 
 // serviceForKeycloak function takes in a Keycloak object and returns a Service for that object.
 func (r *ReconcileKeycloak) serviceForKeycloak(keycloak *codewindv1alpha1.Keycloak) *corev1.Service {
-	ls := labelsForKeycloak(keycloak.Name)
+	ls := labelsForKeycloak(keycloak)
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "codewind-keycloak-" + keycloak.Spec.WorkspaceID,
@@ -113,7 +113,7 @@ func (r *ReconcileKeycloak) serviceForKeycloak(keycloak *codewindv1alpha1.Keyclo
 
 // deploymentForKeycloak returns a Keycloak object
 func (r *ReconcileKeycloak) deploymentForKeycloak(keycloak *codewindv1alpha1.Keycloak) *appsv1.Deployment {
-	ls := labelsForKeycloak(keycloak.Name)
+	ls := labelsForKeycloak(keycloak)
 	replicas := int32(1)
 
 	dep := &appsv1.Deployment{
@@ -187,7 +187,7 @@ func (r *ReconcileKeycloak) deploymentForKeycloak(keycloak *codewindv1alpha1.Key
 
 // serviceForKeycloak function takes in a Keycloak object and returns a Service for that object.
 func (r *ReconcileKeycloak) ingressForKeycloak(keycloak *codewindv1alpha1.Keycloak) *extv1beta1.Ingress {
-	ls := labelsForKeycloak(keycloak.Name)
+	ls := labelsForKeycloak(keycloak)
 	annotations := map[string]string{
 		"nginx.ingress.kubernetes.io/rewrite-target":     "/",
 		"nginx.ingress.kubernetes.io/backend-protocol":   "HTTP",
@@ -240,6 +240,6 @@ func (r *ReconcileKeycloak) ingressForKeycloak(keycloak *codewindv1alpha1.Keyclo
 
 // labelsForKeycloak returns the labels for selecting the resources
 // belonging to the given keycloak CR name.
-func labelsForKeycloak(name string) map[string]string {
-	return map[string]string{"app": "codewind-keycloak", "keycloak_cr": name}
+func labelsForKeycloak(keycloak *codewindv1alpha1.Keycloak) map[string]string {
+	return map[string]string{"app": "codewind-keycloak", "deploymentRef": keycloak.Spec.DeploymentReference}
 }
