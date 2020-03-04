@@ -347,7 +347,7 @@ func (r *ReconcileCodewind) serviceForCodewindGatekeeper(codewind *codewindv1alp
 			},
 		},
 	}
-	// Set Keycloak instance as the owner of the Service.
+	// Set Codewind instance as the owner of the Service.
 	controllerutil.SetControllerReference(codewind, service, r.scheme)
 	return service
 }
@@ -490,9 +490,76 @@ func (r *ReconcileCodewind) ingressForCodewindGatekeeper(codewind *codewindv1alp
 		},
 	}
 
-	// Set Keycloak instance as the owner of the Service.
+	// Set Codewind instance as the owner of the Service.
 	controllerutil.SetControllerReference(codewind, ingress, r.scheme)
 	return ingress
+}
+
+// buildGatekeeperSessionSecret :  builds a session secret for gatekeeper
+func (r *ReconcileCodewind) buildGatekeeperSecretSession(codewind *codewindv1alpha1.Codewind, sessionSecretValue string) *corev1.Secret {
+	metaLabels := labelsForCodewindGatekeeper(codewind)
+	secret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret-codewind-session-" + codewind.Spec.WorkspaceID,
+			Namespace: codewind.Namespace,
+			Labels:    metaLabels,
+		},
+		StringData: map[string]string{
+			"session_secret": sessionSecretValue,
+		},
+	}
+	// Set Codewind instance as the owner of this Secret.
+	controllerutil.SetControllerReference(codewind, secret, r.scheme)
+	return secret
+}
+
+// buildGatekeeperSecretTLS :  builds a TLS secret for gatekeeper
+func (r *ReconcileCodewind) buildGatekeeperSecretTLS(codewind *codewindv1alpha1.Codewind, pemPublicCert string, pemPrivateKey string) *corev1.Secret {
+	metaLabels := labelsForCodewindGatekeeper(codewind)
+	secret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret-codewind-tls-" + codewind.Spec.WorkspaceID,
+			Namespace: codewind.Namespace,
+			Labels:    metaLabels,
+		},
+		StringData: map[string]string{
+			"tls.crt": pemPublicCert,
+			"tls.key": pemPrivateKey,
+		},
+	}
+	// Set Codewind instance as the owner of this Secret.
+	controllerutil.SetControllerReference(codewind, secret, r.scheme)
+	return secret
+}
+
+// buildGatekeeperSecretAuth :  builds an authentication detail secret for gatekeeper
+func (r *ReconcileCodewind) buildGatekeeperSecretAuth(codewind *codewindv1alpha1.Codewind, keycloakClientSecret string) *corev1.Secret {
+	metaLabels := labelsForCodewindGatekeeper(codewind)
+	secret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret-codewind-client-" + codewind.Spec.WorkspaceID,
+			Namespace: codewind.Namespace,
+			Labels:    metaLabels,
+		},
+		StringData: map[string]string{
+			"client_secret": keycloakClientSecret,
+		},
+	}
+	// Set Codewind instance as the owner of this secret.
+	controllerutil.SetControllerReference(codewind, secret, r.scheme)
+	return secret
 }
 
 // labelsForCodewindPFE returns the labels for selecting the resources

@@ -3,6 +3,8 @@ package codewind
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	codewindv1alpha1 "github.com/eclipse/codewind-operator/pkg/apis/codewind/v1alpha1"
@@ -164,10 +166,10 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, serviceAccount)
 	if err != nil && errors.IsNotFound(err) {
 		newServiceAccount := r.serviceAccountForCodewind(codewind)
-		reqLogger.Info("Creating a new service account", "Namespace", newServiceAccount.Namespace, "Name", newServiceAccount.Name)
+		reqLogger.Info("Creating a new Codewind service account", "Namespace", newServiceAccount.Namespace, "Name", newServiceAccount.Name)
 		err = r.client.Create(context.TODO(), newServiceAccount)
 		if err != nil {
-			reqLogger.Error(err, "Failed to create new Secret.", "Namespace", newServiceAccount.Namespace, "Name", newServiceAccount.Name)
+			reqLogger.Error(err, "Failed to create new Codewind service account.", "Namespace", newServiceAccount.Namespace, "Name", newServiceAccount.Name)
 			return reconcile.Result{}, err
 		}
 	} else if err != nil {
@@ -207,7 +209,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		reqLogger.Info("Creating a new PFE Deployment.", "Namespace", dep.Namespace, "Name", dep.Name)
 		err = r.client.Create(context.TODO(), dep)
 		if err != nil {
-			reqLogger.Error(err, "Failed to create new Deployment.", "Namespace", dep.Namespace, "Name", dep.Name)
+			reqLogger.Error(err, "Failed to create new PFE deployment.", "Namespace", dep.Namespace, "Name", dep.Name)
 			return reconcile.Result{}, err
 		}
 		// Deployment created successfully - return and requeue
@@ -226,7 +228,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		reqLogger.Info("Creating a new Service", "Namespace", newService.Namespace, "Name", newService.Name)
 		err = r.client.Create(context.TODO(), newService)
 		if err != nil {
-			reqLogger.Error(err, "Failed to create new Service.", "Namespace", newService.Namespace, "Name", newService.Name)
+			reqLogger.Error(err, "Failed to create new service.", "Namespace", newService.Namespace, "Name", newService.Name)
 			return reconcile.Result{}, err
 		}
 	} else if err != nil {
@@ -265,6 +267,58 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		}
 	} else if err != nil {
 		reqLogger.Error(err, "Failed to get Codewind Performance service")
+		return reconcile.Result{}, err
+	}
+
+	// Check if the Codewind Gatekeeper session secrets already exist, if not create new ones
+	secret := &corev1.Secret{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "secret-codewind-session-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, secret)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new Secrets object
+		session := strings.ToUpper(strconv.FormatInt(kubeutil.CreateTimestamp(), 36))
+		newSecret := r.buildGatekeeperSecretSession(codewind, session)
+		reqLogger.Info("Creating a new Secret", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
+		err = r.client.Create(context.TODO(), newSecret)
+		if err != nil {
+			reqLogger.Error(err, "Failed to create new Gatekeeper session secret.", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
+			return reconcile.Result{}, err
+		}
+	} else if err != nil {
+		reqLogger.Error(err, "Failed to get Gatekeeper session secret.")
+		return reconcile.Result{}, err
+	}
+
+	// Check if the Codewind Gatekeeper TLS secrets already exist, if not create new ones
+	secret = &corev1.Secret{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "secret-codewind-tls-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, secret)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new Secrets object
+		newSecret := r.buildGatekeeperSecretTLS(codewind, "aaa", "bbb")
+		reqLogger.Info("Creating a new Secret", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
+		err = r.client.Create(context.TODO(), newSecret)
+		if err != nil {
+			reqLogger.Error(err, "Failed to create new Gatekeeper TLS secret.", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
+			return reconcile.Result{}, err
+		}
+	} else if err != nil {
+		reqLogger.Error(err, "Failed to get TLS secret.")
+		return reconcile.Result{}, err
+	}
+
+	// Check if the Codewind Gatekeeper Auth secrets already exist, if not create new ones
+	secret = &corev1.Secret{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "secret-codewind-client-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, secret)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new Secrets object
+		newSecret := r.buildGatekeeperSecretAuth(codewind, "aaa")
+		reqLogger.Info("Creating a new Gatekeeper Auth Secret", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
+		err = r.client.Create(context.TODO(), newSecret)
+		if err != nil {
+			reqLogger.Error(err, "Failed to create new Gatekeeper TLS secret.", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
+			return reconcile.Result{}, err
+		}
+	} else if err != nil {
+		reqLogger.Error(err, "Failed to get Gatekeeper auth secret.")
 		return reconcile.Result{}, err
 	}
 

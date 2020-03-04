@@ -1,6 +1,8 @@
 package kubeutil
 
 import (
+	"time"
+
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -41,4 +43,9 @@ func getDiscoveryClient() (*discovery.DiscoveryClient, error) {
 		return nil, err
 	}
 	return discovery.NewDiscoveryClientForConfig(kubeconfig)
+}
+
+// CreateTimestamp : Create a timestamp
+func CreateTimestamp() int64 {
+	return time.Now().UnixNano() / int64(time.Millisecond)
 }
