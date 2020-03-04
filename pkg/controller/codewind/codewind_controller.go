@@ -2,9 +2,13 @@ package codewind
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	codewindv1alpha1 "github.com/eclipse/codewind-operator/pkg/apis/codewind/v1alpha1"
+	defaults "github.com/eclipse/codewind-operator/pkg/controller/defaults"
 	kubeutil "github.com/eclipse/codewind-operator/pkg/util"
+	"github.com/go-logr/logr"
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -128,7 +132,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	isOpenshift, _, err := kubeutil.DetectOpenShift()
 	if err != nil {
-		logrus.Errorf("An error occurred when detecting current infra: %s", err)
+		logrus.Errorf("An error occurred when detecting current infrastructure: %s", err)
 	}
 
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
@@ -146,6 +150,14 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		reqLogger.Error(err, "Failed to get Codewind.")
 		return reconcile.Result{}, err
 	}
+
+	// Get the keycloak pod
+	keycloakPod, err := r.fetchKeycloakPod(reqLogger, request, codewind.Spec.KeycloakDeployment)
+	if err != nil || keycloakPod == nil {
+		reqLogger.Error(err, "Unable to find the requested Keycloak pod")
+		return reconcile.Result{RequeueAfter: time.Second * 10}, err
+	}
+	reqLogger.Info("Found the running Keycloak Pod", "Labels:", keycloakPod.GetLabels())
 
 	// Check if the Codewind Service account already exist, if not create new ones
 	serviceAccount := &corev1.ServiceAccount{}
@@ -180,9 +192,9 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	}
 
 	// TODO - pull these from the keycloak service
-	keycloakRealm := "codewind"
-	keycloakAuthURL := "https://keycloak......."
-	keycloakClientID := "someclient"
+	keycloakRealm := defaults.CodewindAuthRealm
+	keycloakAuthURL := "https://" + "codewind-keycloak......."
+	keycloakClientID := "codewind-" + codewind.Spec.WorkspaceID
 	logLevel := "info"
 
 	// Check if the Codewind PFE Deployment already exists, if not create a new one
@@ -312,4 +324,19 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	}
 
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileCodewind) fetchKeycloakPod(reqLogger logr.Logger, request reconcile.Request, keycloakDeploymentRef string) (*corev1.Pod, error) {
+	keycloaks := &corev1.PodList{}
+	opts := []client.ListOption{
+		client.MatchingLabels{"app": "codewind-keycloak", "deploymentRef": keycloakDeploymentRef},
+		//client.MatchingFields{"deploymentRef": keycloakDeploymentRef},
+	}
+	err := r.client.List(context.TODO(), keycloaks, opts...)
+	if len(keycloaks.Items) == 0 {
+		err = fmt.Errorf("Unable to find Keycloak deployment '%s'", keycloakDeploymentRef)
+		return nil, err
+	}
+	keycloakPod := keycloaks.Items[0]
+	return &keycloakPod, nil
 }
