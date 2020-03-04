@@ -306,13 +306,15 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	ingressGatekeeper := &extensionsv1.Ingress{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-gatekeeper-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, ingressGatekeeper)
 	if err != nil && errors.IsNotFound(err) {
-		newService := r.ingressForCodewindGatekeeper(codewind)
-		reqLogger.Info("Creating a new Codewind gatekeeper ingress", "Namespace", newService.Namespace, "Name", newService.Name)
-		err = r.client.Create(context.TODO(), newService)
+		newIngress := r.ingressForCodewindGatekeeper(codewind)
+		reqLogger.Info("Creating a new Codewind gatekeeper ingress", "Namespace", newIngress.Namespace, "Name", newIngress.Name)
+		err = r.client.Create(context.TODO(), newIngress)
 		if err != nil {
-			reqLogger.Error(err, "Failed to create new Codewind gatekeeper ingress.", "Namespace", newService.Namespace, "Name", newService.Name)
+			reqLogger.Error(err, "Failed to create new Codewind gatekeeper ingress.", "Namespace", newIngress.Namespace, "Name", newIngress.Name)
 			return reconcile.Result{}, err
 		}
+		// Success, update the accessURL
+		codewind.Status.AccessURL = "https://codewind-gatekeeper-" + codewind.Spec.WorkspaceID + "." + codewind.Spec.IngressDomain
 	} else if err != nil {
 		reqLogger.Error(err, "Failed to get Codewind gatekeeper ingress")
 		return reconcile.Result{}, err

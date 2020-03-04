@@ -185,14 +185,13 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 		// Define a new Ingress object
 		ing := r.ingressForKeycloak(keycloak)
 		reqLogger.Info("Creating a new Ingress", "Namespace", ing.Namespace, "Name", ing.Name)
-
-		// Update the accessURL
-		keycloak.Status.AccessURL = "https://codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + keycloak.Spec.IngressDomain
 		err = r.client.Create(context.TODO(), ing)
 		if err != nil {
 			reqLogger.Error(err, "Failed to create new Ingress.", "Namespace", ing.Namespace, "Name", ing.Name)
 			return reconcile.Result{}, err
 		}
+		// Update the accessURL
+		keycloak.Status.AccessURL = "https://codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + keycloak.Spec.IngressDomain
 	} else if err != nil {
 		reqLogger.Error(err, "Failed to get Ingress")
 		return reconcile.Result{}, err
