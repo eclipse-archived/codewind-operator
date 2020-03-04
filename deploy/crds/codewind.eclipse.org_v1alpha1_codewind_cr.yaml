@@ -1,13 +1,12 @@
-###  Example of creating a Codewind service
+###  Example of creating a Codewind remote deployment
 apiVersion: codewind.eclipse.org/v1alpha1
 kind: Codewind
 metadata:
   name: codewind-k81235kj
 spec:
-  size: 1
   workspaceID: k81235kj
   keycloakDeployment: devex-0001
   ingressDomain: 10.100.111.145.nip.io
   logLevel: info
-  username: cody-sprint2
+  username: cody-sprint
   storageSize: 10Gi
