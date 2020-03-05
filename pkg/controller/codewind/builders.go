@@ -397,7 +397,7 @@ func (r *ReconcileCodewind) deploymentForCodewindGatekeeper(codewind *codewindv1
 							},
 							{
 								Name:  "GATEKEEPER_HOST",
-								Value: "codewind-gatekeeper" + codewind.Spec.IngressDomain,
+								Value: "codewind-gatekeeper-" + codewind.Spec.WorkspaceID + "." + codewind.Spec.IngressDomain,
 							},
 
 							{
