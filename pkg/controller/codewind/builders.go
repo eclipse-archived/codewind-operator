@@ -109,7 +109,7 @@ func (r *ReconcileCodewind) deploymentForCodewindPerformance(codewind *codewindv
 							},
 							{
 								Name:  "CODEWIND_INGRESS",
-								Value: "codewind-performance-" + codewind.Spec.WorkspaceID + "." + codewind.Spec.IngressDomain,
+								Value: "codewind-gatekeeper" + codewind.Spec.WorkspaceID + "." + codewind.Spec.IngressDomain,
 							},
 						},
 						Ports: []corev1.ContainerPort{
@@ -332,7 +332,7 @@ func (r *ReconcileCodewind) serviceForCodewindPerformance(codewind *codewindv1al
 
 // serviceForCodewindGatekeeper function takes in a Codewind object and returns a Gatekeeper Service for that object.
 func (r *ReconcileCodewind) serviceForCodewindGatekeeper(codewind *codewindv1alpha1.Codewind) *corev1.Service {
-	ls := labelsForCodewindPerformance(codewind)
+	ls := labelsForCodewindGatekeeper(codewind)
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "codewind-gatekeeper-" + codewind.Spec.WorkspaceID,
@@ -522,7 +522,7 @@ func (r *ReconcileCodewind) buildGatekeeperSecretSession(codewind *codewindv1alp
 func (r *ReconcileCodewind) buildGatekeeperSecretTLS(codewind *codewindv1alpha1.Codewind) *corev1.Secret {
 	metaLabels := labelsForCodewindGatekeeper(codewind)
 
-	pemPrivateKey, pemPublicCert, _ := util.GenerateCertificate("codewind-gatekeeper-"+codewind.Spec.WorkspaceID+"."+codewind.Spec.IngressDomain, "Codewind")
+	pemPrivateKey, pemPublicCert, _ := util.GenerateCertificate("codewind-gatekeeper-"+codewind.Spec.WorkspaceID+"."+codewind.Spec.IngressDomain, "Codewind"+"-"+codewind.Spec.WorkspaceID)
 
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -569,13 +569,13 @@ func (r *ReconcileCodewind) buildGatekeeperSecretAuth(codewind *codewindv1alpha1
 // labelsForCodewindPFE returns the labels for selecting the resources
 // belonging to the given codewind CR name.
 func labelsForCodewindPFE(codewind *codewindv1alpha1.Codewind) map[string]string {
-	return map[string]string{"app": "codewind-pfe", "codewind_cr": codewind.Name, "codewindWorkspace": codewind.Spec.WorkspaceID}
+	return map[string]string{"app": "codewind-pfe", "codewindWorkspace": codewind.Spec.WorkspaceID}
 }
 
 func labelsForCodewindPerformance(codewind *codewindv1alpha1.Codewind) map[string]string {
-	return map[string]string{"app": "codewind-performance", "codewind_performance_cr": "codewind-performance-" + codewind.Spec.WorkspaceID, "codewindWorkspace": codewind.Spec.WorkspaceID}
+	return map[string]string{"app": "codewind-performance", "codewindWorkspace": codewind.Spec.WorkspaceID}
 }
 
 func labelsForCodewindGatekeeper(codewind *codewindv1alpha1.Codewind) map[string]string {
-	return map[string]string{"app": "codewind-gatekeeper", "codewind_gatekeeper_cr": "codewind-gatekeeper-" + codewind.Spec.WorkspaceID, "codewindWorkspace": codewind.Spec.WorkspaceID}
+	return map[string]string{"app": "codewind-gatekeeper", "codewindWorkspace": codewind.Spec.WorkspaceID}
 }

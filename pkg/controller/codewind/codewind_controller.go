@@ -204,7 +204,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// TODO - pull these from the keycloak service
 	keycloakRealm := defaults.CodewindAuthRealm
-	keycloakAuthURL := "https://" + "codewind-keycloak-k3a237fj.10.100.111.145.nip.io/TODO"
+	keycloakAuthURL := "https://" + "codewind-keycloak-k3a237fj.10.100.111.145.nip.io"
 	keycloakClientID := "codewind-" + codewind.Spec.WorkspaceID
 	logLevel := "info"
 
