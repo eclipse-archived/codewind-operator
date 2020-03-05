@@ -6,6 +6,7 @@ import (
 	"github.com/eclipse/codewind-installer/pkg/appconstants"
 	codewindv1alpha1 "github.com/eclipse/codewind-operator/pkg/apis/codewind/v1alpha1"
 	defaults "github.com/eclipse/codewind-operator/pkg/controller/defaults"
+	"github.com/eclipse/codewind-operator/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -247,7 +248,7 @@ func (r *ReconcileCodewind) deploymentForCodewindPFE(codewind *codewindv1alpha1.
 							},
 							{
 								Name:  "CHE_INGRESS_HOST",
-								Value: "codewind-gatekeeper" + "." + codewind.Spec.IngressDomain,
+								Value: "codewind-gatekeeper-" + codewind.Spec.WorkspaceID + "." + codewind.Spec.IngressDomain,
 							},
 							{
 								Name:  "INGRESS_PREFIX",
@@ -465,13 +466,13 @@ func (r *ReconcileCodewind) ingressForCodewindGatekeeper(codewind *codewindv1alp
 		Spec: extensionsv1beta1.IngressSpec{
 			TLS: []extensionsv1beta1.IngressTLS{
 				{
-					Hosts:      []string{"codewind-gatekeeper." + codewind.Spec.IngressDomain},
+					Hosts:      []string{"codewind-gatekeeper-" + codewind.Spec.WorkspaceID + "." + codewind.Spec.IngressDomain},
 					SecretName: "secret-codewind-tls" + "-" + codewind.Spec.WorkspaceID,
 				},
 			},
 			Rules: []extensionsv1beta1.IngressRule{
 				{
-					Host: "codewind-gatekeeper" + codewind.Spec.IngressDomain,
+					Host: "codewind-gatekeeper-" + codewind.Spec.WorkspaceID + "." + codewind.Spec.IngressDomain,
 					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
 						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
 							Paths: []extensionsv1beta1.HTTPIngressPath{
@@ -520,6 +521,9 @@ func (r *ReconcileCodewind) buildGatekeeperSecretSession(codewind *codewindv1alp
 // buildGatekeeperSecretTLS :  builds a TLS secret for gatekeeper
 func (r *ReconcileCodewind) buildGatekeeperSecretTLS(codewind *codewindv1alpha1.Codewind, pemPublicCert string, pemPrivateKey string) *corev1.Secret {
 	metaLabels := labelsForCodewindGatekeeper(codewind)
+
+	pemPrivateKey, pemPublicCert, _ = util.GenerateCertificate("codewind-gatekeeper-"+codewind.Spec.WorkspaceID+"."+codewind.Spec.IngressDomain, "Codewind")
+
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",

@@ -9,7 +9,7 @@ import (
 
 	codewindv1alpha1 "github.com/eclipse/codewind-operator/pkg/apis/codewind/v1alpha1"
 	defaults "github.com/eclipse/codewind-operator/pkg/controller/defaults"
-	kubeutil "github.com/eclipse/codewind-operator/pkg/util"
+	util "github.com/eclipse/codewind-operator/pkg/util"
 	"github.com/go-logr/logr"
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
@@ -43,7 +43,7 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
-	isOpenshift, _, err := kubeutil.DetectOpenShift()
+	isOpenshift, _, err := util.DetectOpenShift()
 	if err != nil {
 		logrus.Errorf("Error detecting platfom: %s", err)
 	}
@@ -113,6 +113,15 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	// Ingress
+	err = c.Watch(&source.Kind{Type: &extensionsv1.Ingress{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &codewindv1alpha1.Codewind{},
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -132,7 +141,7 @@ type ReconcileCodewind struct {
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 
-	isOpenshift, _, err := kubeutil.DetectOpenShift()
+	isOpenshift, _, err := util.DetectOpenShift()
 	if err != nil {
 		logrus.Errorf("An error occurred when detecting current infrastructure: %s", err)
 	}
@@ -275,7 +284,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "secret-codewind-session-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, secret)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new Secrets object
-		session := strings.ToUpper(strconv.FormatInt(kubeutil.CreateTimestamp(), 36))
+		session := strings.ToUpper(strconv.FormatInt(util.CreateTimestamp(), 36))
 		newSecret := r.buildGatekeeperSecretSession(codewind, session)
 		reqLogger.Info("Creating a new Secret", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
 		err = r.client.Create(context.TODO(), newSecret)

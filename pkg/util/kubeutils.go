@@ -1,4 +1,4 @@
-package kubeutil
+package util
 
 import (
 	"time"
