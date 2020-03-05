@@ -446,7 +446,7 @@ func (r *ReconcileCodewind) ingressForCodewindGatekeeper(codewind *codewindv1alp
 	annotations := map[string]string{
 		"nginx.ingress.kubernetes.io/rewrite-target":     "/",
 		"ingress.bluemix.net/redirect-to-https":          "True",
-		"ingress.bluemix.net/ssl-services":               "ssl-service=codewind-gatekeeper-" + codewind.Spec.WorkspaceID,
+		"ingress.bluemix.net/ssl-services":               "ssl-service=" + "codewind-gatekeeper" + "-" + codewind.Spec.WorkspaceID,
 		"nginx.ingress.kubernetes.io/backend-protocol":   "HTTPS",
 		"kubernetes.io/ingress.class":                    "nginx",
 		"nginx.ingress.kubernetes.io/force-ssl-redirect": "true",
@@ -458,7 +458,7 @@ func (r *ReconcileCodewind) ingressForCodewindGatekeeper(codewind *codewindv1alp
 			Kind:       "Ingress",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        "codewind-gatekeeper-" + codewind.Spec.WorkspaceID,
+			Name:        "codewind-gatekeeper" + "-" + codewind.Spec.WorkspaceID,
 			Annotations: annotations,
 			Namespace:   codewind.Namespace,
 			Labels:      ls,
@@ -466,13 +466,13 @@ func (r *ReconcileCodewind) ingressForCodewindGatekeeper(codewind *codewindv1alp
 		Spec: extensionsv1beta1.IngressSpec{
 			TLS: []extensionsv1beta1.IngressTLS{
 				{
-					Hosts:      []string{"codewind-gatekeeper-" + codewind.Spec.WorkspaceID + "." + codewind.Spec.IngressDomain},
+					Hosts:      []string{"codewind-gatekeeper" + "-" + codewind.Spec.WorkspaceID + "." + codewind.Spec.IngressDomain},
 					SecretName: "secret-codewind-tls" + "-" + codewind.Spec.WorkspaceID,
 				},
 			},
 			Rules: []extensionsv1beta1.IngressRule{
 				{
-					Host: "codewind-gatekeeper-" + codewind.Spec.WorkspaceID + "." + codewind.Spec.IngressDomain,
+					Host: "codewind-gatekeeper" + "-" + codewind.Spec.WorkspaceID + "." + codewind.Spec.IngressDomain,
 					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
 						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
 							Paths: []extensionsv1beta1.HTTPIngressPath{
@@ -519,10 +519,10 @@ func (r *ReconcileCodewind) buildGatekeeperSecretSession(codewind *codewindv1alp
 }
 
 // buildGatekeeperSecretTLS :  builds a TLS secret for gatekeeper
-func (r *ReconcileCodewind) buildGatekeeperSecretTLS(codewind *codewindv1alpha1.Codewind, pemPublicCert string, pemPrivateKey string) *corev1.Secret {
+func (r *ReconcileCodewind) buildGatekeeperSecretTLS(codewind *codewindv1alpha1.Codewind) *corev1.Secret {
 	metaLabels := labelsForCodewindGatekeeper(codewind)
 
-	pemPrivateKey, pemPublicCert, _ = util.GenerateCertificate("codewind-gatekeeper-"+codewind.Spec.WorkspaceID+"."+codewind.Spec.IngressDomain, "Codewind")
+	pemPrivateKey, pemPublicCert, _ := util.GenerateCertificate("codewind-gatekeeper-"+codewind.Spec.WorkspaceID+"."+codewind.Spec.IngressDomain, "Codewind")
 
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -545,7 +545,7 @@ func (r *ReconcileCodewind) buildGatekeeperSecretTLS(codewind *codewindv1alpha1.
 }
 
 // buildGatekeeperSecretAuth :  builds an authentication detail secret for gatekeeper
-func (r *ReconcileCodewind) buildGatekeeperSecretAuth(codewind *codewindv1alpha1.Codewind, keycloakClientSecret string) *corev1.Secret {
+func (r *ReconcileCodewind) buildGatekeeperSecretAuth(codewind *codewindv1alpha1.Codewind, keycloakClientKey string) *corev1.Secret {
 	metaLabels := labelsForCodewindGatekeeper(codewind)
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -558,7 +558,7 @@ func (r *ReconcileCodewind) buildGatekeeperSecretAuth(codewind *codewindv1alpha1
 			Labels:    metaLabels,
 		},
 		StringData: map[string]string{
-			"client_secret": keycloakClientSecret,
+			"client_secret": keycloakClientKey,
 		},
 	}
 	// Set Codewind instance as the owner of this secret.

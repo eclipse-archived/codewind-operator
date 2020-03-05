@@ -204,7 +204,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// TODO - pull these from the keycloak service
 	keycloakRealm := defaults.CodewindAuthRealm
-	keycloakAuthURL := "https://" + "codewind-keycloak......."
+	keycloakAuthURL := "https://" + "codewind-keycloak-k3a237fj.10.100.111.145.nip.io/TODO"
 	keycloakClientID := "codewind-" + codewind.Spec.WorkspaceID
 	logLevel := "info"
 
@@ -302,7 +302,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "secret-codewind-tls-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, secret)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new Secrets object
-		newSecret := r.buildGatekeeperSecretTLS(codewind, "aaa", "bbb")
+		newSecret := r.buildGatekeeperSecretTLS(codewind)
 		reqLogger.Info("Creating a new Secret", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
 		err = r.client.Create(context.TODO(), newSecret)
 		if err != nil {
@@ -319,7 +319,8 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "secret-codewind-client-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, secret)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new Secrets object
-		newSecret := r.buildGatekeeperSecretAuth(codewind, "aaa")
+		clientKey := "TODO:  GET THIS SECRET FROM KEYCLOAK"
+		newSecret := r.buildGatekeeperSecretAuth(codewind, clientKey)
 		reqLogger.Info("Creating a new Gatekeeper Auth Secret", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
 		err = r.client.Create(context.TODO(), newSecret)
 		if err != nil {
