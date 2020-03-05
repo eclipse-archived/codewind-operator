@@ -386,7 +386,6 @@ func (r *ReconcileCodewind) fetchKeycloakPod(reqLogger logr.Logger, request reco
 	keycloaks := &corev1.PodList{}
 	opts := []client.ListOption{
 		client.MatchingLabels{"app": "codewind-keycloak", "deploymentRef": keycloakDeploymentRef},
-		//client.MatchingFields{"deploymentRef": keycloakDeploymentRef},
 	}
 	err := r.client.List(context.TODO(), keycloaks, opts...)
 	if len(keycloaks.Items) == 0 {

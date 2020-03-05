@@ -5,14 +5,18 @@ go 1.13 // TODO: jenkins currently using 1.12
 require (
 	github.com/eclipse/codewind-installer v0.8.0
 	github.com/go-logr/logr v0.1.0
+	github.com/google/go-containerregistry v0.0.0-20200304201134-fcc8ea80e26f // indirect
+	github.com/knative/serving v0.13.0 // indirect
 	github.com/operator-framework/operator-sdk v0.15.2
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/pflag v1.0.5
 	github.com/urfave/cli v1.22.2 // indirect
 	github.com/zalando/go-keyring v0.0.0-20200121091418-667557018717 // indirect
-	k8s.io/api v0.0.0
-	k8s.io/apimachinery v0.0.0
+	k8s.io/api v0.17.0
+	k8s.io/apimachinery v0.17.0
 	k8s.io/client-go v12.0.0+incompatible
+	knative.dev/pkg v0.0.0-20200304185554-312b1be35ceb // indirect
+	knative.dev/serving v0.13.0 // indirect
 	sigs.k8s.io/controller-runtime v0.4.0
 )
 

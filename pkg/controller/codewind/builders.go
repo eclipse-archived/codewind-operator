@@ -341,7 +341,7 @@ func (r *ReconcileCodewind) serviceForCodewindGatekeeper(codewind *codewindv1alp
 			Selector: ls,
 			Ports: []corev1.ServicePort{
 				{
-					Port: int32(defaults.PerformanceContainerPort),
+					Port: int32(defaults.GatekeeperContainerPort),
 					Name: "codewind-gatekeeper-http",
 				},
 			},
