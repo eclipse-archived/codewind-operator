@@ -49,8 +49,60 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// Watch for changes and requeue the controlled owner Keycloak
+	// Watch for changes to secondary resources and requeue the owner Codewind
+	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &codewindv1alpha1.Keycloak{},
+	})
+	if err != nil {
+		return err
+	}
+
+	// Secret
+	if err = c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &codewindv1alpha1.Keycloak{},
+	}); err != nil {
+		return err
+	}
+
+	// service
+	if err = c.Watch(&source.Kind{Type: &corev1.Service{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &codewindv1alpha1.Keycloak{},
+	}); err != nil {
+		return err
+	}
+
+	// Watch for Deployment changes and requeue the controlled owner Keycloak
 	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &codewindv1alpha1.Keycloak{},
+	})
+	if err != nil {
+		return err
+	}
+
+	// persistent volume claim
+	err = c.Watch(&source.Kind{Type: &corev1.PersistentVolumeClaim{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &codewindv1alpha1.Keycloak{},
+	})
+	if err != nil {
+		return err
+	}
+
+	// Ingress
+	err = c.Watch(&source.Kind{Type: &extv1beta1.Ingress{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &codewindv1alpha1.Keycloak{},
+	})
+	if err != nil {
+		return err
+	}
+
+	// Watch for route changes and requeue the controlled owner Keycloak
+	err = c.Watch(&source.Kind{Type: &v1.Route{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &codewindv1alpha1.Keycloak{},
 	})
