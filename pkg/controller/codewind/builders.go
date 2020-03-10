@@ -229,18 +229,16 @@ func (r *ReconcileCodewind) deploymentForCodewindPFE(codewind *codewindv1alpha1.
 							},
 							{
 								Name:  "CODEWIND_VERSION",
-								Value: defaults.VersionNum,
+								Value: defaults.CodewindImageTag,
 							},
-							/*
-								{
-									Name:  "OWNER_REF_NAME",
-									Value: codewind.OwnerReferenceName,
-								},
-								{
-									Name:  "OWNER_REF_UID",
-									Value: string(codewind.OwnerReferenceUID),
-								},
-							*/
+							{
+								Name:  "OWNER_REF_NAME",
+								Value: "codewind-" + codewind.Spec.WorkspaceID,
+							},
+							{
+								Name:  "OWNER_REF_UID",
+								Value: string(codewind.GetUID()),
+							},
 							{
 								Name:  "CODEWIND_PERFORMANCE_SERVICE",
 								Value: "codewind-performance-" + codewind.Spec.WorkspaceID,

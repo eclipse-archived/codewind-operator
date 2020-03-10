@@ -3,7 +3,7 @@ package defaults
 const (
 
 	// VersionNum
-	VersionNum = "0.1.1"
+	VersionNum = "0.0.1"
 
 	// KeycloakImage is the docker image that will be used in the Codewind-Keycloak pod
 	KeycloakImage = "eclipse/codewind-keycloak-amd64"
