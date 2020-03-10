@@ -3,7 +3,6 @@ package codewind
 import (
 	"strconv"
 
-	"github.com/eclipse/codewind-installer/pkg/appconstants"
 	codewindv1alpha1 "github.com/eclipse/codewind-operator/pkg/apis/codewind/v1alpha1"
 	defaults "github.com/eclipse/codewind-operator/pkg/controller/defaults"
 	"github.com/eclipse/codewind-operator/pkg/util"
@@ -230,7 +229,7 @@ func (r *ReconcileCodewind) deploymentForCodewindPFE(codewind *codewindv1alpha1.
 							},
 							{
 								Name:  "CODEWIND_VERSION",
-								Value: appconstants.VersionNum,
+								Value: defaults.VersionNum,
 							},
 							/*
 								{

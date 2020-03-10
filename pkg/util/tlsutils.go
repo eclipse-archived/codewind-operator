@@ -1,3 +1,14 @@
+/*******************************************************************************
+ * Copyright (c) 2019 IBM Corporation and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v2.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v20.html
+ *
+ * Contributors:
+ *     IBM Corporation - initial API and implementation
+ *******************************************************************************/
+
 package util
 
 import (
@@ -10,7 +21,7 @@ import (
 	"math/big"
 	"time"
 
-	logr "github.com/sirupsen/logrus"
+	logrus "github.com/sirupsen/logrus"
 )
 
 // GenerateCertificate : generates a key and certificate
@@ -29,17 +40,17 @@ func GenerateCertificate(dnsName string, certTitle string) (string, string, erro
 		DNSNames:              []string{dnsName},
 	}
 
-	logr.Println("Creating " + dnsName + " server Key")
+	logrus.Println("Creating " + dnsName + " server Key")
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		logr.Errorln("Unable to create server key")
+		logrus.Errorln("Unable to create server key")
 		return "", "", err
 	}
 
-	logr.Println("Creating " + dnsName + " server certificate")
+	logrus.Println("Creating " + dnsName + " server certificate")
 	certDerBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, publicKey(privateKey), privateKey)
 	if err != nil {
-		logr.Errorf("Failed to create certificate: %s\n", err)
+		logrus.Errorf("Failed to create certificate: %s\n", err)
 		return "", "", err
 	}
 

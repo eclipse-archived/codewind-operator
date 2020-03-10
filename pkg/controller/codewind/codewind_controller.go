@@ -2,7 +2,9 @@ package codewind
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -42,6 +44,9 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
+
+	// Disable certificate validation checking
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	isOpenshift, _, err := util.DetectOpenShift()
 	if err != nil {
@@ -206,7 +211,11 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	keycloakRealm := defaults.CodewindAuthRealm
 	keycloakAuthURL := "https://" + "codewind-keycloak-k3a237fj.10.100.111.145.nip.io"
 	keycloakClientID := "codewind-" + codewind.Spec.WorkspaceID
+	keycloakAdminUser := "admin"
+	keycloakAdminPass := "admin"
+	gatekeeperPublicURL := "https://codewind-gatekeeper-" + codewind.Spec.WorkspaceID + "." + codewind.Spec.IngressDomain
 	logLevel := "info"
+	clientKey, err := AddCodewindToKeycloak(codewind.Spec.WorkspaceID, keycloakAuthURL, keycloakRealm, keycloakAdminUser, keycloakAdminPass, gatekeeperPublicURL, codewind.Spec.Username, keycloakClientID)
 
 	// Check if the Codewind PFE Deployment already exists, if not create a new one
 	deployment := &appsv1.Deployment{}
@@ -319,7 +328,6 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "secret-codewind-client-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, secret)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new Secrets object
-		clientKey := "TODO:  GET THIS SECRET FROM KEYCLOAK"
 		newSecret := r.buildGatekeeperSecretAuth(codewind, clientKey)
 		reqLogger.Info("Creating a new Gatekeeper Auth Secret", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
 		err = r.client.Create(context.TODO(), newSecret)
@@ -378,7 +386,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 			return reconcile.Result{}, err
 		}
 		// Success, update the accessURL
-		codewind.Status.AccessURL = "https://codewind-gatekeeper-" + codewind.Spec.WorkspaceID + "." + codewind.Spec.IngressDomain
+		codewind.Status.AccessURL = gatekeeperPublicURL
 	} else if err != nil {
 		reqLogger.Error(err, "Failed to get Codewind gatekeeper ingress")
 		return reconcile.Result{}, err
