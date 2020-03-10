@@ -4,6 +4,9 @@ import (
 	"context"
 
 	codewindv1alpha1 "github.com/eclipse/codewind-operator/pkg/apis/codewind/v1alpha1"
+	"github.com/eclipse/codewind-operator/pkg/util"
+	v1 "github.com/openshift/api/route/v1"
+	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -76,9 +79,14 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling Keycloak")
 
+	isOpenshift, _, err := util.DetectOpenShift()
+	if err != nil {
+		logrus.Errorf("An error occurred when detecting current infrastructure: %s", err)
+	}
+
 	// Fetch the Keycloak instance
 	keycloak := &codewindv1alpha1.Keycloak{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, keycloak)
+	err = r.client.Get(context.TODO(), request.NamespacedName, keycloak)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			reqLogger.Info("Keycloak resource not found. Ignoring since object must be deleted.")
@@ -178,23 +186,44 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
-	// Check if the Keycloak Ingress already exists, if not create a new one
-	ingress := &extv1beta1.Ingress{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-keycloak-" + keycloak.Spec.WorkspaceID, Namespace: keycloak.Namespace}, ingress)
-	if err != nil && errors.IsNotFound(err) {
-		// Define a new Ingress object
-		ing := r.ingressForKeycloak(keycloak)
-		reqLogger.Info("Creating a new Ingress", "Namespace", ing.Namespace, "Name", ing.Name)
-		err = r.client.Create(context.TODO(), ing)
-		if err != nil {
-			reqLogger.Error(err, "Failed to create new Ingress.", "Namespace", ing.Namespace, "Name", ing.Name)
+	if isOpenshift {
+		// Check if the Keycloak Ingress already exists, if not create a new one
+		route := &v1.Route{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-keycloak-" + keycloak.Spec.WorkspaceID, Namespace: keycloak.Namespace}, route)
+		if err != nil && errors.IsNotFound(err) {
+			// Define a new Ingress object
+			ing := r.routeForKeycloak(keycloak)
+			reqLogger.Info("Creating a new route", "Namespace", ing.Namespace, "Name", ing.Name)
+			err = r.client.Create(context.TODO(), ing)
+			if err != nil {
+				reqLogger.Error(err, "Failed to create new route.", "Namespace", ing.Namespace, "Name", ing.Name)
+				return reconcile.Result{}, err
+			}
+			// Update the accessURL
+			keycloak.Status.AccessURL = "https://codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + keycloak.Spec.IngressDomain
+		} else if err != nil {
+			reqLogger.Error(err, "Failed to get Keycloak route")
 			return reconcile.Result{}, err
 		}
-		// Update the accessURL
-		keycloak.Status.AccessURL = "https://codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + keycloak.Spec.IngressDomain
-	} else if err != nil {
-		reqLogger.Error(err, "Failed to get Ingress")
-		return reconcile.Result{}, err
+	} else {
+		// Check if the Keycloak Ingress already exists, if not create a new one
+		ingress := &extv1beta1.Ingress{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-keycloak-" + keycloak.Spec.WorkspaceID, Namespace: keycloak.Namespace}, ingress)
+		if err != nil && errors.IsNotFound(err) {
+			// Define a new Ingress object
+			ing := r.ingressForKeycloak(keycloak)
+			reqLogger.Info("Creating a new Ingress", "Namespace", ing.Namespace, "Name", ing.Name)
+			err = r.client.Create(context.TODO(), ing)
+			if err != nil {
+				reqLogger.Error(err, "Failed to create new Ingress.", "Namespace", ing.Namespace, "Name", ing.Name)
+				return reconcile.Result{}, err
+			}
+			// Update the accessURL
+			keycloak.Status.AccessURL = "https://codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + keycloak.Spec.IngressDomain
+		} else if err != nil {
+			reqLogger.Error(err, "Failed to get Keycloak Ingress")
+			return reconcile.Result{}, err
+		}
 	}
 
 	err = r.client.Status().Update(context.TODO(), keycloak)

@@ -374,27 +374,51 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
-	// Check if the Codewind Gatekeeper Ingress already exists, if not create a new one
-	ingressGatekeeper := &extensionsv1.Ingress{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-gatekeeper-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, ingressGatekeeper)
-	if err != nil && errors.IsNotFound(err) {
-		newIngress := r.ingressForCodewindGatekeeper(codewind)
-		reqLogger.Info("Creating a new Codewind gatekeeper ingress", "Namespace", newIngress.Namespace, "Name", newIngress.Name)
-		err = r.client.Create(context.TODO(), newIngress)
-		if err != nil {
-			reqLogger.Error(err, "Failed to create new Codewind gatekeeper ingress.", "Namespace", newIngress.Namespace, "Name", newIngress.Name)
+	if isOpenshift {
+		// Check if the Codewind Gatekeeper Route already exists, if not create a new one
+		routeGatekeeper := &extensionsv1.Ingress{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-gatekeeper-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, routeGatekeeper)
+		if err != nil && errors.IsNotFound(err) {
+			newRoute := r.routeForCodewindGatekeeper(codewind)
+			reqLogger.Info("Creating a new Codewind gatekeeper ingress", "Namespace", newRoute.Namespace, "Name", newRoute.Name)
+			err = r.client.Create(context.TODO(), newRoute)
+			if err != nil {
+				reqLogger.Error(err, "Failed to create new Codewind gatekeeper route.", "Namespace", newRoute.Namespace, "Name", newRoute.Name)
+				return reconcile.Result{}, err
+			}
+			// Success, update the accessURL
+			codewind.Status.AccessURL = gatekeeperPublicURL
+		} else if err != nil {
+			reqLogger.Error(err, "Failed to get Codewind gatekeeper route")
 			return reconcile.Result{}, err
 		}
-		// Success, update the accessURL
-		codewind.Status.AccessURL = gatekeeperPublicURL
-	} else if err != nil {
-		reqLogger.Error(err, "Failed to get Codewind gatekeeper ingress")
-		return reconcile.Result{}, err
-	}
+		err = r.client.Status().Update(context.TODO(), codewind)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	} else {
+		// Check if the Codewind Gatekeeper Ingress already exists, if not create a new one
+		ingressGatekeeper := &extensionsv1.Ingress{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-gatekeeper-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, ingressGatekeeper)
+		if err != nil && errors.IsNotFound(err) {
+			newIngress := r.ingressForCodewindGatekeeper(codewind)
+			reqLogger.Info("Creating a new Codewind gatekeeper ingress", "Namespace", newIngress.Namespace, "Name", newIngress.Name)
+			err = r.client.Create(context.TODO(), newIngress)
+			if err != nil {
+				reqLogger.Error(err, "Failed to create new Codewind gatekeeper ingress.", "Namespace", newIngress.Namespace, "Name", newIngress.Name)
+				return reconcile.Result{}, err
+			}
+			// Success, update the accessURL
+			codewind.Status.AccessURL = gatekeeperPublicURL
+		} else if err != nil {
+			reqLogger.Error(err, "Failed to get Codewind gatekeeper ingress")
+			return reconcile.Result{}, err
+		}
 
-	err = r.client.Status().Update(context.TODO(), codewind)
-	if err != nil {
-		return reconcile.Result{}, err
+		err = r.client.Status().Update(context.TODO(), codewind)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
 	return reconcile.Result{}, nil

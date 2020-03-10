@@ -3,6 +3,7 @@ package keycloak
 import (
 	codewindv1alpha1 "github.com/eclipse/codewind-operator/pkg/apis/codewind/v1alpha1"
 	defaults "github.com/eclipse/codewind-operator/pkg/controller/defaults"
+	v1 "github.com/openshift/api/route/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -83,7 +84,7 @@ func (r *ReconcileKeycloak) secretsForKeycloak(keycloak *codewindv1alpha1.Keyclo
 			"keycloak-admin-password": "admin",
 		},
 	}
-	// Set Keycloak instance as the owner of the Secret.
+	// Set Keycloak instance as the owner of the secret.
 	controllerutil.SetControllerReference(keycloak, secret, r.scheme)
 	return secret
 }
@@ -106,7 +107,7 @@ func (r *ReconcileKeycloak) serviceForKeycloak(keycloak *codewindv1alpha1.Keyclo
 			},
 		},
 	}
-	// Set Keycloak instance as the owner of the Service.
+	// Set Keycloak instance as the owner of the service.
 	controllerutil.SetControllerReference(keycloak, service, r.scheme)
 	return service
 }
@@ -180,9 +181,52 @@ func (r *ReconcileKeycloak) deploymentForKeycloak(keycloak *codewindv1alpha1.Key
 			},
 		},
 	}
-	// Set Keycloak instance as the owner of the Deployment.
+	// Set Keycloak instance as the owner of the deployment.
 	controllerutil.SetControllerReference(keycloak, dep, r.scheme)
 	return dep
+}
+
+// serviceForKeycloak function takes in a Keycloak object and returns a Service for that object.
+func (r *ReconcileKeycloak) routeForKeycloak(keycloak *codewindv1alpha1.Keycloak) *v1.Route {
+	ls := labelsForKeycloak(keycloak)
+	weight := int32(100)
+	annotations := map[string]string{
+		"nginx.ingress.kubernetes.io/rewrite-target":     "/",
+		"nginx.ingress.kubernetes.io/backend-protocol":   "HTTP",
+		"nginx.ingress.kubernetes.io/force-ssl-redirect": "true",
+		"kubernetes.io/ingress.class":                    "nginx",
+	}
+	route := &v1.Route{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "route.openshift.io/v1",
+			Kind:       "Route",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "codewind-keycloak-" + keycloak.Spec.WorkspaceID,
+			Namespace:   keycloak.Namespace,
+			Annotations: annotations,
+			Labels:      ls,
+		},
+		Spec: v1.RouteSpec{
+			Host: "codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + keycloak.Spec.IngressDomain,
+			Port: &v1.RoutePort{
+				TargetPort: intstr.FromInt(defaults.KeycloakContainerPort),
+			},
+			TLS: &v1.TLSConfig{
+				InsecureEdgeTerminationPolicy: v1.InsecureEdgeTerminationPolicyRedirect,
+				Termination:                   v1.TLSTerminationEdge,
+			},
+			To: v1.RouteTargetReference{
+				Kind:   "Service",
+				Name:   "codewind-keycloak-" + keycloak.Spec.WorkspaceID,
+				Weight: &weight,
+			},
+		},
+	}
+
+	// Set Keycloak instance as the owner of the route.
+	controllerutil.SetControllerReference(keycloak, route, r.scheme)
+	return route
 }
 
 // serviceForKeycloak function takes in a Keycloak object and returns a Service for that object.
@@ -233,7 +277,7 @@ func (r *ReconcileKeycloak) ingressForKeycloak(keycloak *codewindv1alpha1.Keyclo
 		},
 	}
 
-	// Set Keycloak instance as the owner of the Service.
+	// Set Keycloak instance as the owner of the ingress.
 	controllerutil.SetControllerReference(keycloak, ingress, r.scheme)
 	return ingress
 }
