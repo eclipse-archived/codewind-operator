@@ -1,6 +1,6 @@
 module github.com/eclipse/codewind-operator
 
-go 1.13 // TODO: jenkins currently using 1.12
+go 1.12 // TODO: jenkins currently using 1.12
 
 require (
 	github.com/Azure/go-autorest/autorest v0.9.3 // indirect
