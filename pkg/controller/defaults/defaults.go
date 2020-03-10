@@ -46,4 +46,16 @@ const (
 
 	// GatekeeperContainerPort is the port at which the Gatekeeper is exposed
 	GatekeeperContainerPort = 9096
+
+	// CodewindRoleBindingNamePrefix will include the workspaceID when deployed
+	CodewindRoleBindingNamePrefix = "codewind-rolebinding"
+
+	// CodewindTektonClusterRoleBindingName : Tekton, cluster role binding
+	CodewindTektonClusterRoleBindingName = "codewind-tekton-rolebinding"
+
+	// CodewindTektonClusterRolesName : Tekton, cluster role
+	CodewindTektonClusterRolesName = "codewind-tekton"
+
+	// CodewindRolesName will include the workspaceID when deployed
+	CodewindRolesName = "eclipse-codewind-" + VersionNum
 )
