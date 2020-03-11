@@ -18,6 +18,8 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -166,6 +168,15 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling Codewind")
 
+	// Use ROKSStorageClass when it is available
+	storageClassName := ""
+	storageClassDef := &storagev1.StorageClass{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.ROKSStorageClass, Namespace: ""}, storageClassDef)
+	if err != nil {
+		logrus.Infof("Using storage class: %s", defaults.ROKSStorageClass)
+		storageClassName = defaults.ROKSStorageClass
+	}
+
 	// Fetch the Codewind instance
 	codewind := &codewindv1alpha1.Codewind{}
 	err = r.client.Get(context.TODO(), request.NamespacedName, codewind)
@@ -187,72 +198,70 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	}
 	reqLogger.Info("Found the running Keycloak Pod", "Labels:", keycloakPod.GetLabels())
 
-	/*
-		// Check if the Codewind Cluster roles already exist, if not create new ones
-		clusterRoles := &rbacv1.ClusterRole{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.CodewindRolesName, Namespace: codewind.Namespace}, clusterRoles)
+	// Check if the Codewind Cluster roles already exist, if not create new ones
+	clusterRoles := &rbacv1.ClusterRole{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.CodewindRolesName, Namespace: ""}, clusterRoles)
 
-		if err != nil && errors.IsNotFound(err) {
-			newClusterRoles := r.clusterRolesForCodewind(codewind)
-			reqLogger.Info("Creating a new Codewind cluster roles", "Namespace", newClusterRoles.Namespace, "Name", newClusterRoles.Name)
-			err = r.client.Create(context.TODO(), newClusterRoles)
-			if err != nil {
-				reqLogger.Error(err, "Failed to create new Codewind cluster roles.", "Namespace", newClusterRoles.Namespace, "Name", newClusterRoles.Name)
-				return reconcile.Result{}, err
-			}
-		} else if err != nil {
-			reqLogger.Error(err, "Failed to get Codewind cluster roles.")
+	if err != nil && errors.IsNotFound(err) {
+		newClusterRoles := r.clusterRolesForCodewind(codewind)
+		reqLogger.Info("Creating a new Codewind cluster roles", "Namespace", "", "Name", newClusterRoles.Name)
+		err = r.client.Create(context.TODO(), newClusterRoles)
+		if err != nil {
+			reqLogger.Error(err, "Failed to create new Codewind cluster roles.", "Namespace", "", "Name", newClusterRoles.Name)
 			return reconcile.Result{}, err
 		}
+	} else if err != nil {
+		reqLogger.Error(err, "Failed to get Codewind cluster roles.")
+		return reconcile.Result{}, err
+	}
 
-		// Check if the Codewind instance Role Bindings already exist, if not create new ones
-		roleBinding := &rbacv1.RoleBinding{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, roleBinding)
-		if err != nil && errors.IsNotFound(err) {
-			newRoleBinding := r.roleBindingForCodewind(codewind)
-			reqLogger.Info("Creating a new Codewind role binding", "Namespace", newRoleBinding.Namespace, "Name", newRoleBinding.Name)
-			err = r.client.Create(context.TODO(), newRoleBinding)
-			if err != nil {
-				reqLogger.Error(err, "Failed to create new Codewind role binding.", "Namespace", newRoleBinding.Namespace, "Name", newRoleBinding.Name)
-				return reconcile.Result{}, err
-			}
-		} else if err != nil {
-			reqLogger.Error(err, "Failed to get Codewind role binding.")
+	// Check if the Codewind instance Role Bindings already exist, if not create new ones
+	roleBinding := &rbacv1.RoleBinding{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.CodewindRoleBindingNamePrefix + "-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, roleBinding)
+	if err != nil && errors.IsNotFound(err) {
+		newRoleBinding := r.roleBindingForCodewind(codewind)
+		reqLogger.Info("Creating a new Codewind role binding", "Namespace", newRoleBinding.Namespace, "Name", newRoleBinding.Name)
+		err = r.client.Create(context.TODO(), newRoleBinding)
+		if err != nil {
+			reqLogger.Error(err, "Failed to create new Codewind role binding.", "Namespace", newRoleBinding.Namespace, "Name", newRoleBinding.Name)
 			return reconcile.Result{}, err
 		}
+	} else if err != nil {
+		reqLogger.Error(err, "Failed to get Codewind role binding.")
+		return reconcile.Result{}, err
+	}
 
-		// Check if the Tekton Cluster roles already exist, if not create new ones
-		clusterRolesTekton := &rbacv1.ClusterRole{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.CodewindTektonClusterRolesName, Namespace: codewind.Namespace}, clusterRolesTekton)
-		if err != nil && errors.IsNotFound(err) {
-			newClusterRoles := r.clusterRolesForCodewindTekton(codewind)
-			reqLogger.Info("Creating a new Codewind Tekton cluster roles", "Namespace", newClusterRoles.Namespace, "Name", newClusterRoles.Name)
-			err = r.client.Create(context.TODO(), newClusterRoles)
-			if err != nil {
-				reqLogger.Error(err, "Failed to create new Codewind Tekton cluster roles.", "Namespace", newClusterRoles.Namespace, "Name", newClusterRoles.Name)
-				return reconcile.Result{}, err
-			}
-		} else if err != nil {
-			reqLogger.Error(err, "Failed to get Codewind Tekton cluster roles.")
+	// Check if the Tekton Cluster roles already exist, if not create new ones
+	clusterRolesTekton := &rbacv1.ClusterRole{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.CodewindTektonClusterRolesName, Namespace: ""}, clusterRolesTekton)
+	if err != nil && errors.IsNotFound(err) {
+		newClusterRoles := r.clusterRolesForCodewindTekton(codewind)
+		reqLogger.Info("Creating a new Codewind Tekton cluster roles", "Namespace", "", "Name", newClusterRoles.Name)
+		err = r.client.Create(context.TODO(), newClusterRoles)
+		if err != nil {
+			reqLogger.Error(err, "Failed to create new Codewind Tekton cluster roles.", "Namespace", "", "Name", newClusterRoles.Name)
 			return reconcile.Result{}, err
 		}
+	} else if err != nil {
+		reqLogger.Error(err, "Failed to get Codewind Tekton cluster roles.")
+		return reconcile.Result{}, err
+	}
 
-		// Check if the Codewind Tekton Role Bindings already exist, if not create new ones
-		roleBindingTekton := &rbacv1.RoleBinding{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, roleBindingTekton)
-		if err != nil && errors.IsNotFound(err) {
-			newRoleBinding := r.roleBindingForCodewindTekton(codewind)
-			reqLogger.Info("Creating a new Codewind role binding", "Namespace", newRoleBinding.Namespace, "Name", newRoleBinding.Name)
-			err = r.client.Create(context.TODO(), newRoleBinding)
-			if err != nil {
-				reqLogger.Error(err, "Failed to create new Codewind role binding.", "Namespace", newRoleBinding.Namespace, "Name", newRoleBinding.Name)
-				return reconcile.Result{}, err
-			}
-		} else if err != nil {
-			reqLogger.Error(err, "Failed to get Codewind role binding.")
+	// Check if the Codewind Tekton Cluster Role Bindings already exist, if not create new ones
+	roleBindingTekton := &rbacv1.ClusterRoleBinding{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.CodewindTektonClusterRoleBindingName + "-" + codewind.Spec.WorkspaceID, Namespace: ""}, roleBindingTekton)
+	if err != nil && errors.IsNotFound(err) {
+		newTektonRoleBinding := r.roleBindingForCodewindTekton(codewind)
+		reqLogger.Info("Creating a new Codewind Tekton ClusterRoleBinding", "Namespace", newTektonRoleBinding.Namespace, "Name", newTektonRoleBinding.Name)
+		err = r.client.Create(context.TODO(), newTektonRoleBinding)
+		if err != nil {
+			reqLogger.Error(err, "Failed to create new Codewind Tekton ClusterRoleBinding.", "Namespace", newTektonRoleBinding.Namespace, "Name", newTektonRoleBinding.Name)
 			return reconcile.Result{}, err
 		}
-	*/
+	} else if err != nil {
+		reqLogger.Error(err, "Failed to get Codewind Tekton ClusterRoleBinding.")
+		return reconcile.Result{}, err
+	}
 
 	// Check if the Codewind Service account already exist, if not create new ones
 	serviceAccount := &corev1.ServiceAccount{}
@@ -274,7 +283,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	codewindPVC := &corev1.PersistentVolumeClaim{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-pfe-pvc-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, codewindPVC)
 	if err != nil && errors.IsNotFound(err) {
-		newCodewindPVC := r.pvcForCodewind(codewind)
+		newCodewindPVC := r.pvcForCodewind(codewind, storageClassName)
 		reqLogger.Info("Creating a new Codewind PFE PVC", "Namespace", newCodewindPVC.Namespace, "Name", newCodewindPVC.Name)
 		err = r.client.Create(context.TODO(), newCodewindPVC)
 		if err != nil {
@@ -321,7 +330,6 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 			return reconcile.Result{}, err
 		}
 		// Deployment created successfully - return and requeue
-		// TODO: GET the deployment object again instead of requeuing it see: https://godoc.org/sigs.k8s.io/controller-runtime/pkg/reconcile#Reconciler
 		return reconcile.Result{Requeue: true}, nil
 	} else if err != nil {
 		reqLogger.Error(err, "Failed to get PFE Deployment.")

@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -38,7 +37,7 @@ func (r *ReconcileCodewind) serviceAccountForCodewind(codewind *codewindv1alpha1
 }
 
 // pvcForCodewind function takes in a Codewind object and returns a PVC for that object.
-func (r *ReconcileCodewind) pvcForCodewind(codewind *codewindv1alpha1.Codewind) *corev1.PersistentVolumeClaim {
+func (r *ReconcileCodewind) pvcForCodewind(codewind *codewindv1alpha1.Codewind, storageClassName string) *corev1.PersistentVolumeClaim {
 	labels := labelsForCodewindPFE(codewind)
 	storageSize := defaults.PFEStorageSize
 	if codewind.Spec.StorageSize != "" {
@@ -64,6 +63,11 @@ func (r *ReconcileCodewind) pvcForCodewind(codewind *codewindv1alpha1.Codewind) 
 				},
 			},
 		},
+	}
+
+	// If a storage class was passed in, set it in the PVC
+	if storageClassName != "" {
+		pvc.Spec.StorageClassName = &storageClassName
 	}
 
 	// Set Codewind instance as the owner of the persistent volume claim.

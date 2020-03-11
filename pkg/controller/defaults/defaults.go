@@ -65,4 +65,7 @@ const (
 
 	// ConstKeycloakConfigReady : Keycloak config completed and ready
 	ConstKeycloakConfigReady = "Ready"
+
+	// ROKSStorageClass references the storage class to use on ROKS (OpenShift on IKS)
+	ROKSStorageClass = "ibmc-file-bronze"
 )
