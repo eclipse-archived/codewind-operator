@@ -1,7 +1,6 @@
 package defaults
 
 const (
-
 	// VersionNum
 	VersionNum = "0.0.1"
 
@@ -58,4 +57,12 @@ const (
 
 	// CodewindRolesName will include the workspaceID when deployed
 	CodewindRolesName = "eclipse-codewind-" + VersionNum
+)
+
+const (
+	// ConstKeycloakConfigStarted : Keycloak config started
+	ConstKeycloakConfigStarted = "Started"
+
+	// ConstKeycloakConfigReady : Keycloak config completed and ready
+	ConstKeycloakConfigReady = "Ready"
 )

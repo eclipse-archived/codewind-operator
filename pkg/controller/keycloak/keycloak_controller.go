@@ -37,6 +37,12 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
+
+	isOpenshift, _, err := util.DetectOpenShift()
+	if err != nil {
+		logrus.Errorf("Error detecting platfom: %s", err)
+	}
+
 	// Create a new controller
 	c, err := controller.New("keycloak-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
@@ -92,22 +98,24 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// Ingress
-	err = c.Watch(&source.Kind{Type: &extv1beta1.Ingress{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &codewindv1alpha1.Keycloak{},
-	})
-	if err != nil {
-		return err
-	}
-
-	// Watch for route changes and requeue the controlled owner Keycloak
-	err = c.Watch(&source.Kind{Type: &v1.Route{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &codewindv1alpha1.Keycloak{},
-	})
-	if err != nil {
-		return err
+	if isOpenshift {
+		// Watch for route changes and requeue the controlled owner Keycloak
+		err = c.Watch(&source.Kind{Type: &v1.Route{}}, &handler.EnqueueRequestForOwner{
+			IsController: true,
+			OwnerType:    &codewindv1alpha1.Keycloak{},
+		})
+		if err != nil {
+			return err
+		}
+	} else {
+		// Ingress
+		err = c.Watch(&source.Kind{Type: &extv1beta1.Ingress{}}, &handler.EnqueueRequestForOwner{
+			IsController: true,
+			OwnerType:    &codewindv1alpha1.Keycloak{},
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

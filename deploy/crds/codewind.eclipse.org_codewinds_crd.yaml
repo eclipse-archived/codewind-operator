@@ -20,6 +20,10 @@ spec:
     description: Deployment reference name
     name: Auth
     type: string
+  - JSONPath: .status.keycloadStatus
+    description: Keycload configuration status
+    name: Keycloak
+    type: string
   - JSONPath: .status.accessURL
     description: Exposed route
     name: AccessURL
@@ -35,7 +39,6 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: Codewind is the Schema for the codewinds API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -53,21 +56,30 @@ spec:
           description: CodewindSpec defines the desired state of Codewind
           properties:
             ingressDomain:
-              description: Ingress domain
+              description: Ingress domain suffix for Codewind
               type: string
             keycloakDeployment:
               description: 'KeycloakDeployment : name of the keycloak deployment used
                 by this instance of codewind'
               type: string
+            logLevel:
+              description: LogLevel within pods
+              type: string
+            storageSize:
+              description: Codewind Storage size
+              type: string
             username:
               description: Developer username assigned to this instance
               type: string
             workspaceID:
-              description: 'WorkspaceID: ident of this deployment'
+              description: 'Important: Run "operator-sdk generate k8s" to regenerate
+                code after modifying this file WorkspaceID: ident of this deployment'
               type: string
           required:
           - ingressDomain
           - keycloakDeployment
+          - logLevel
+          - storageSize
           - username
           - workspaceID
           type: object
@@ -81,9 +93,13 @@ spec:
               description: 'Important: Run "operator-sdk generate k8s" to regenerate
                 code after modifying this file Keycloak access URL'
               type: string
+            keycloadStatus:
+              description: Keycloak Configuration status
+              type: string
           required:
           - accessURL
           - authURL
+          - keycloadStatus
           type: object
       type: object
   version: v1alpha1
