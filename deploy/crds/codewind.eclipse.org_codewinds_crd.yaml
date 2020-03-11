@@ -56,9 +56,6 @@ spec:
         spec:
           description: CodewindSpec defines the desired state of Codewind
           properties:
-            ingressDomain:
-              description: Ingress domain suffix for Codewind
-              type: string
             keycloakDeployment:
               description: 'KeycloakDeployment : name of the keycloak deployment used
                 by this instance of codewind'
@@ -77,7 +74,6 @@ spec:
                 code after modifying this file WorkspaceID: ident of this deployment'
               type: string
           required:
-          - ingressDomain
           - keycloakDeployment
           - logLevel
           - storageSize

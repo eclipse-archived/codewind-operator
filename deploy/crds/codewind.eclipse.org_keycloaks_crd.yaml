@@ -51,15 +51,11 @@ spec:
             deploymentRef:
               description: 'DeploymentReference : A reference name for this instance'
               type: string
-            ingressDomain:
-              description: 'IngressDomain : Ingress domain suffix for Keycloak'
-              type: string
             workspaceID:
               description: 'WorkspaceID : A workspace reference ID for this instance'
               type: string
           required:
           - deploymentRef
-          - ingressDomain
           - workspaceID
           type: object
         status:

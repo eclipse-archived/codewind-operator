@@ -13,8 +13,6 @@ type CodewindSpec struct {
 	KeycloakDeployment string `json:"keycloakDeployment"`
 	// Developer username assigned to this instance
 	Username string `json:"username"`
-	// Ingress domain suffix for Codewind
-	IngressDomain string `json:"ingressDomain"`
 	// Codewind Storage size
 	StorageSize string `json:"storageSize"`
 	// LogLevel within pods

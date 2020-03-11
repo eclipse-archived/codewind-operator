@@ -171,6 +171,19 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		reqLogger.Error(err, "An error occurred when detecting current infrastructure", "")
 	}
 
+	// Fetch the config map
+	operatorNamespace := util.GetOperatorNamespace()
+	operatorConfigMap := &corev1.ConfigMap{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.OperatorConfigMapName, Namespace: operatorNamespace}, operatorConfigMap)
+	if err != nil {
+		reqLogger.Error(err, "Unable to read config map. Ensure one has been created in the same namespace as the operator", "name", defaults.OperatorConfigMapName)
+		return reconcile.Result{}, err
+	}
+
+	// Get fields we need from the configmap
+	ingressDomain := operatorConfigMap.Data["ingressDomain"]
+	reqLogger.Info("Ingress Domain", "value", ingressDomain)
+
 	reqLogger.Info("Reconciling Codewind")
 	// get the operator config map
 	configMap := &corev1.ConfigMap{}
@@ -313,7 +326,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	keycloakClientID := "codewind-" + codewind.Spec.WorkspaceID
 	keycloakAdminUser := "admin"
 	keycloakAdminPass := "admin"
-	gatekeeperPublicURL := "https://codewind-gatekeeper-" + codewind.Spec.WorkspaceID + "." + codewind.Spec.IngressDomain
+	gatekeeperPublicURL := "https://codewind-gatekeeper-" + codewind.Spec.WorkspaceID + "." + ingressDomain
 	logLevel := "info"
 
 	clientKey := ""
@@ -334,7 +347,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-pfe-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, deployment)
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Deployment
-		dep := r.deploymentForCodewindPFE(codewind, isOpenshift, keycloakRealm, keycloakAuthURL, logLevel)
+		dep := r.deploymentForCodewindPFE(codewind, isOpenshift, keycloakRealm, keycloakAuthURL, logLevel, ingressDomain)
 		reqLogger.Info("The workspace ID of this is:", "WorkspaceID", codewind.Spec.WorkspaceID)
 		reqLogger.Info("Creating a new PFE Deployment.", "Namespace", dep.Namespace, "Name", dep.Name)
 		err = r.client.Create(context.TODO(), dep)
@@ -370,7 +383,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-performance-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, deploymentPerformance)
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Performance Deployment
-		newDeployment := r.deploymentForCodewindPerformance(codewind)
+		newDeployment := r.deploymentForCodewindPerformance(codewind, ingressDomain)
 		reqLogger.Info("Creating a new Performance deployment.", "Namespace", codewind.Namespace, "Name", "codewind-performance-"+codewind.Spec.WorkspaceID)
 		err = r.client.Create(context.TODO(), newDeployment)
 		if err != nil {
@@ -422,7 +435,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "secret-codewind-tls-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, secret)
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Secrets object
-		newSecret := r.buildGatekeeperSecretTLS(codewind)
+		newSecret := r.buildGatekeeperSecretTLS(codewind, ingressDomain)
 		reqLogger.Info("Creating a new Secret", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
 		err = r.client.Create(context.TODO(), newSecret)
 		if err != nil {
@@ -456,7 +469,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-gatekeeper-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, deploymentGatekeeper)
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Gatekeeper Deployment
-		newDeployment := r.deploymentForCodewindGatekeeper(codewind, isOpenshift, keycloakRealm, keycloakClientID, keycloakAuthURL)
+		newDeployment := r.deploymentForCodewindGatekeeper(codewind, isOpenshift, keycloakRealm, keycloakClientID, keycloakAuthURL, ingressDomain)
 		reqLogger.Info("Creating a new Gatekeeper deployment.", "Namespace", codewind.Namespace, "Name", "codewind-gatekeeper-"+codewind.Spec.WorkspaceID)
 		err = r.client.Create(context.TODO(), newDeployment)
 		if err != nil {
@@ -490,7 +503,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		routeGatekeeper := &v1.Route{}
 		err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-gatekeeper-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, routeGatekeeper)
 		if err != nil && k8serr.IsNotFound(err) {
-			newRoute := r.routeForCodewindGatekeeper(codewind)
+			newRoute := r.routeForCodewindGatekeeper(codewind, ingressDomain)
 			reqLogger.Info("Creating a new Codewind gatekeeper ingress", "Namespace", newRoute.Namespace, "Name", newRoute.Name)
 			err = r.client.Create(context.TODO(), newRoute)
 			if err != nil {
@@ -512,7 +525,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		ingressGatekeeper := &extv1beta1.Ingress{}
 		err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-gatekeeper-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, ingressGatekeeper)
 		if err != nil && k8serr.IsNotFound(err) {
-			newIngress := r.ingressForCodewindGatekeeper(codewind)
+			newIngress := r.ingressForCodewindGatekeeper(codewind, ingressDomain)
 			reqLogger.Info("Creating a new Codewind gatekeeper ingress", "Namespace", newIngress.Namespace, "Name", newIngress.Name)
 			err = r.client.Create(context.TODO(), newIngress)
 			if err != nil {

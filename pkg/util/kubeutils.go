@@ -14,6 +14,7 @@ package util
 import (
 	"time"
 
+	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -59,4 +60,12 @@ func getDiscoveryClient() (*discovery.DiscoveryClient, error) {
 // CreateTimestamp : Create a timestamp
 func CreateTimestamp() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
+}
+
+func GetOperatorNamespace() string {
+	operatorNamespace, _ := k8sutil.GetOperatorNamespace()
+	if operatorNamespace == "" {
+		operatorNamespace = "codewind"
+	}
+	return operatorNamespace
 }

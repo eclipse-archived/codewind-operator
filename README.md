@@ -2,6 +2,12 @@
 
 Work in progress
 
+
+TODO:  Doc steps to modify the config map
+
+
+
+
 ## Example of creating a Keycloak service
 
 ```yaml
@@ -12,7 +18,6 @@ metadata:
 spec:
   workspaceID: k3a237fj
   deploymentRef: devex-0001
-  ingressDomain: 10.100.111.145.nip.io
 ```
 
 Results in a new Keycloak service being created and accessible via kubectl:
@@ -73,7 +78,6 @@ spec:
   size: 1
   workspaceID: k81235kj
   keycloakDeployment: devex-0001
-  ingressDomain: 10.100.111.145.nip.io
   username: cody-sprint
   storageSize: 10Gi
 ```

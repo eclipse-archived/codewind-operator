@@ -187,7 +187,7 @@ func (r *ReconcileKeycloak) deploymentForKeycloak(keycloak *codewindv1alpha1.Key
 }
 
 // serviceForKeycloak function takes in a Keycloak object and returns a Service for that object.
-func (r *ReconcileKeycloak) routeForKeycloak(keycloak *codewindv1alpha1.Keycloak) *v1.Route {
+func (r *ReconcileKeycloak) routeForKeycloak(keycloak *codewindv1alpha1.Keycloak, ingressDomain string) *v1.Route {
 	ls := labelsForKeycloak(keycloak)
 	weight := int32(100)
 	annotations := map[string]string{
@@ -208,7 +208,7 @@ func (r *ReconcileKeycloak) routeForKeycloak(keycloak *codewindv1alpha1.Keycloak
 			Labels:      ls,
 		},
 		Spec: v1.RouteSpec{
-			Host: "codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + keycloak.Spec.IngressDomain,
+			Host: "codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + ingressDomain,
 			Port: &v1.RoutePort{
 				TargetPort: intstr.FromInt(defaults.KeycloakContainerPort),
 			},
@@ -230,7 +230,7 @@ func (r *ReconcileKeycloak) routeForKeycloak(keycloak *codewindv1alpha1.Keycloak
 }
 
 // serviceForKeycloak function takes in a Keycloak object and returns a Service for that object.
-func (r *ReconcileKeycloak) ingressForKeycloak(keycloak *codewindv1alpha1.Keycloak) *extv1beta1.Ingress {
+func (r *ReconcileKeycloak) ingressForKeycloak(keycloak *codewindv1alpha1.Keycloak, ingressDomain string) *extv1beta1.Ingress {
 	ls := labelsForKeycloak(keycloak)
 	annotations := map[string]string{
 		"nginx.ingress.kubernetes.io/rewrite-target":     "/",
@@ -252,13 +252,13 @@ func (r *ReconcileKeycloak) ingressForKeycloak(keycloak *codewindv1alpha1.Keyclo
 		Spec: extv1beta1.IngressSpec{
 			TLS: []extv1beta1.IngressTLS{
 				{
-					Hosts:      []string{"codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + keycloak.Spec.IngressDomain},
+					Hosts:      []string{"codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + ingressDomain},
 					SecretName: "secret-keycloak-tls" + "-" + keycloak.Spec.WorkspaceID,
 				},
 			},
 			Rules: []extv1beta1.IngressRule{
 				{
-					Host: "codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + keycloak.Spec.IngressDomain,
+					Host: "codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + ingressDomain,
 					IngressRuleValue: extv1beta1.IngressRuleValue{
 						HTTP: &extv1beta1.HTTPIngressRuleValue{
 							Paths: []extv1beta1.HTTPIngressPath{

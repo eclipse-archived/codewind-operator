@@ -9,7 +9,6 @@ import (
 	defaults "github.com/eclipse/codewind-operator/pkg/controller/defaults"
 	"github.com/eclipse/codewind-operator/pkg/util"
 	v1 "github.com/openshift/api/route/v1"
-	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -37,10 +36,7 @@ func Add(mgr manager.Manager) error {
 // newReconciler : returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	reconciler := &ReconcileKeycloak{client: mgr.GetClient(), scheme: mgr.GetScheme()}
-	operatorNamespace, _ := k8sutil.GetOperatorNamespace()
-	if operatorNamespace == "" {
-		operatorNamespace = "codewind"
-	}
+	operatorNamespace := util.GetOperatorNamespace()
 	createOperatorConfigMap(reconciler, operatorNamespace)
 	return &ReconcileKeycloak{client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
@@ -50,7 +46,7 @@ func createOperatorConfigMap(reconciler *ReconcileKeycloak, operatorNamespace st
 	log.Info("Checking operator config map")
 	configMap := &corev1.ConfigMap{}
 	configMap.Namespace = operatorNamespace
-	configMap.Name = "codewind-operator"
+	configMap.Name = defaults.OperatorConfigMapName
 	fData, err := ioutil.ReadFile(defaults.ConfigMapLocation)
 	if err != nil {
 		log.Error(err, "Failed to read config map defaults", defaults.ConfigMapLocation)
@@ -193,6 +189,19 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
+	// Fetch the config map
+	operatorNamespace := util.GetOperatorNamespace()
+	operatorConfigMap := &corev1.ConfigMap{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.OperatorConfigMapName, Namespace: operatorNamespace}, operatorConfigMap)
+	if err != nil {
+		reqLogger.Error(err, "Unable to read config map. Ensure one has been created in the same namespace as the operator", "name", defaults.OperatorConfigMapName)
+		return reconcile.Result{}, err
+	}
+
+	// Get fields we need from the configmap
+	ingressDomain := operatorConfigMap.Data["ingressDomain"]
+	reqLogger.Info("Ingress Domain", "value", ingressDomain)
+
 	// Check if the Keycloak Service account already exist, if not create new ones
 	serviceAccount := &corev1.ServiceAccount{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-keycloak-" + keycloak.Spec.WorkspaceID, Namespace: keycloak.Namespace}, serviceAccount)
@@ -287,16 +296,16 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 		route := &v1.Route{}
 		err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-keycloak-" + keycloak.Spec.WorkspaceID, Namespace: keycloak.Namespace}, route)
 		if err != nil && k8serr.IsNotFound(err) {
-			// Define a new Ingress object
-			ing := r.routeForKeycloak(keycloak)
-			reqLogger.Info("Creating a new route", "Namespace", ing.Namespace, "Name", ing.Name)
-			err = r.client.Create(context.TODO(), ing)
+			// Define a new Route object
+			openshiftRoute := r.routeForKeycloak(keycloak, ingressDomain)
+			reqLogger.Info("Creating a new route", "Namespace", openshiftRoute.Namespace, "Name", openshiftRoute.Name)
+			err = r.client.Create(context.TODO(), openshiftRoute)
 			if err != nil {
-				reqLogger.Error(err, "Failed to create new route.", "Namespace", ing.Namespace, "Name", ing.Name)
+				reqLogger.Error(err, "Failed to create new route.", "Namespace", openshiftRoute.Namespace, "Name", openshiftRoute.Name)
 				return reconcile.Result{}, err
 			}
 			// Update the accessURL
-			keycloak.Status.AccessURL = "https://codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + keycloak.Spec.IngressDomain
+			keycloak.Status.AccessURL = "https://codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + ingressDomain
 		} else if err != nil {
 			reqLogger.Error(err, "Failed to get Keycloak route")
 			return reconcile.Result{}, err
@@ -307,7 +316,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 		err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-keycloak-" + keycloak.Spec.WorkspaceID, Namespace: keycloak.Namespace}, ingress)
 		if err != nil && k8serr.IsNotFound(err) {
 			// Define a new Ingress object
-			ing := r.ingressForKeycloak(keycloak)
+			ing := r.ingressForKeycloak(keycloak, ingressDomain)
 			reqLogger.Info("Creating a new Ingress", "Namespace", ing.Namespace, "Name", ing.Name)
 			err = r.client.Create(context.TODO(), ing)
 			if err != nil {
@@ -315,7 +324,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 				return reconcile.Result{}, err
 			}
 			// Update the accessURL
-			keycloak.Status.AccessURL = "https://codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + keycloak.Spec.IngressDomain
+			keycloak.Status.AccessURL = "https://codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + ingressDomain
 		} else if err != nil {
 			reqLogger.Error(err, "Failed to get Keycloak Ingress")
 			return reconcile.Result{}, err

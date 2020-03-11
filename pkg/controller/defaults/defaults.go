@@ -71,4 +71,7 @@ const (
 
 	// ConfigMapLocation : Codewind Operator config map defaults
 	ConfigMapLocation = "deploy/codewind-configmap.yaml"
+
+	// Our operator config map name
+	OperatorConfigMapName = "codewind-operator"
 )

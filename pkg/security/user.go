@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	"github.com/eclipse/codewind-operator/pkg/util"
-	"github.com/prometheus/common/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 // RegisteredUsers : A collection of registered users
@@ -32,6 +32,8 @@ type RegisteredUser struct {
 	ID       string `json:"id"`
 	Username string `json:"username"`
 }
+
+var log = logf.Log.WithName("codewind-operator-security.user")
 
 // SecUserGet : Get user from Keycloak
 func SecUserGet(httpClient util.HTTPClient, keycloakConfig *KeycloakConfiguration, accessToken string) (*RegisteredUser, *SecError) {
@@ -83,7 +85,7 @@ func SecUserGet(httpClient util.HTTPClient, keycloakConfig *KeycloakConfiguratio
 func SecUserAddRole(httpClient util.HTTPClient, keycloakConfig *KeycloakConfiguration, accessToken string, roleName string) *SecError {
 
 	// lookup an existing user
-	log.Infof("Looking up user : %v", keycloakConfig.DevUsername)
+	log.Info("Looking up user", "Username", keycloakConfig.DevUsername)
 	registeredUser, secErr := SecUserGet(httpClient, keycloakConfig, accessToken)
 	if secErr != nil {
 		return secErr
@@ -96,7 +98,7 @@ func SecUserAddRole(httpClient util.HTTPClient, keycloakConfig *KeycloakConfigur
 	}
 
 	// build REST request
-	log.Infof("Adding role '%v' to user : '%v'", existingRole.Name, registeredUser.ID)
+	log.Info("Adding role to user", "role", existingRole.Name, "userID", registeredUser.ID)
 	url := keycloakConfig.AuthURL + "/auth/admin/realms/" + keycloakConfig.RealmName + "/users/" + registeredUser.ID + "/role-mappings/realm"
 
 	type PayloadRole struct {

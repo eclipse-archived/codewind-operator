@@ -75,7 +75,7 @@ func (r *ReconcileCodewind) pvcForCodewind(codewind *codewindv1alpha1.Codewind, 
 	return pvc
 }
 
-func (r *ReconcileCodewind) deploymentForCodewindPerformance(codewind *codewindv1alpha1.Codewind) *appsv1.Deployment {
+func (r *ReconcileCodewind) deploymentForCodewindPerformance(codewind *codewindv1alpha1.Codewind, ingressDomain string) *appsv1.Deployment {
 	ls := labelsForCodewindPerformance(codewind)
 	replicas := int32(1)
 	dep := &appsv1.Deployment{
@@ -109,7 +109,7 @@ func (r *ReconcileCodewind) deploymentForCodewindPerformance(codewind *codewindv
 							},
 							{
 								Name:  "CODEWIND_INGRESS",
-								Value: "codewind-gatekeeper" + codewind.Spec.WorkspaceID + "." + codewind.Spec.IngressDomain,
+								Value: "codewind-gatekeeper" + codewind.Spec.WorkspaceID + "." + ingressDomain,
 							},
 						},
 						Ports: []corev1.ContainerPort{
@@ -126,7 +126,7 @@ func (r *ReconcileCodewind) deploymentForCodewindPerformance(codewind *codewindv
 }
 
 // deploymentForCodewindPFE returns a Codewind dployment object
-func (r *ReconcileCodewind) deploymentForCodewindPFE(codewind *codewindv1alpha1.Codewind, isOnOpenshift bool, keycloakRealm string, authHost string, logLevel string) *appsv1.Deployment {
+func (r *ReconcileCodewind) deploymentForCodewindPFE(codewind *codewindv1alpha1.Codewind, isOnOpenshift bool, keycloakRealm string, authHost string, logLevel string, ingressDomain string) *appsv1.Deployment {
 	ls := labelsForCodewindPFE(codewind)
 	replicas := int32(1)
 	loglevel := "info"
@@ -242,11 +242,11 @@ func (r *ReconcileCodewind) deploymentForCodewindPFE(codewind *codewindv1alpha1.
 							},
 							{
 								Name:  "CHE_INGRESS_HOST",
-								Value: "codewind-gatekeeper-" + codewind.Spec.WorkspaceID + "." + codewind.Spec.IngressDomain,
+								Value: "codewind-gatekeeper-" + codewind.Spec.WorkspaceID + "." + ingressDomain,
 							},
 							{
 								Name:  "INGRESS_PREFIX",
-								Value: codewind.Namespace + "." + codewind.Spec.IngressDomain, // provides access to project containers
+								Value: codewind.Namespace + "." + ingressDomain, // provides access to project containers
 							},
 							{
 								Name:  "ON_OPENSHIFT",
@@ -348,7 +348,7 @@ func (r *ReconcileCodewind) serviceForCodewindGatekeeper(codewind *codewindv1alp
 }
 
 // deploymentForCodewindGatekeeper returns a Codewind dployment object
-func (r *ReconcileCodewind) deploymentForCodewindGatekeeper(codewind *codewindv1alpha1.Codewind, isOnOpenshift bool, keycloakRealm string, keycloakClientID string, keycloakAuthURL string) *appsv1.Deployment {
+func (r *ReconcileCodewind) deploymentForCodewindGatekeeper(codewind *codewindv1alpha1.Codewind, isOnOpenshift bool, keycloakRealm string, keycloakClientID string, keycloakAuthURL string, ingressDomain string) *appsv1.Deployment {
 	ls := labelsForCodewindGatekeeper(codewind)
 	replicas := int32(1)
 	dep := &appsv1.Deployment{
@@ -390,7 +390,7 @@ func (r *ReconcileCodewind) deploymentForCodewindGatekeeper(codewind *codewindv1
 							},
 							{
 								Name:  "GATEKEEPER_HOST",
-								Value: "codewind-gatekeeper-" + codewind.Spec.WorkspaceID + "." + codewind.Spec.IngressDomain,
+								Value: "codewind-gatekeeper-" + codewind.Spec.WorkspaceID + "." + ingressDomain,
 							},
 
 							{
@@ -434,7 +434,7 @@ func (r *ReconcileCodewind) deploymentForCodewindGatekeeper(codewind *codewindv1
 }
 
 // ingressForCodewindGatekeeper function takes in a Codewind object and returns an Openshift Route for the gatekeeper
-func (r *ReconcileCodewind) routeForCodewindGatekeeper(codewind *codewindv1alpha1.Codewind) *v1.Route {
+func (r *ReconcileCodewind) routeForCodewindGatekeeper(codewind *codewindv1alpha1.Codewind, ingressDomain string) *v1.Route {
 	ls := labelsForCodewindGatekeeper(codewind)
 	weight := int32(100)
 	route := &v1.Route{
@@ -448,7 +448,7 @@ func (r *ReconcileCodewind) routeForCodewindGatekeeper(codewind *codewindv1alpha
 			Labels:    ls,
 		},
 		Spec: v1.RouteSpec{
-			Host: "codewind-gatekeeper-" + codewind.Spec.IngressDomain,
+			Host: "codewind-gatekeeper-" + ingressDomain,
 			Port: &v1.RoutePort{
 				TargetPort: intstr.FromInt(defaults.GatekeeperContainerPort),
 			},
@@ -469,7 +469,7 @@ func (r *ReconcileCodewind) routeForCodewindGatekeeper(codewind *codewindv1alpha
 }
 
 // ingressForCodewindGatekeeper function takes in a Codewind object and returns an Ingress for the gatekeeper
-func (r *ReconcileCodewind) ingressForCodewindGatekeeper(codewind *codewindv1alpha1.Codewind) *extv1beta1.Ingress {
+func (r *ReconcileCodewind) ingressForCodewindGatekeeper(codewind *codewindv1alpha1.Codewind, ingressDomain string) *extv1beta1.Ingress {
 	ls := labelsForCodewindGatekeeper(codewind)
 	annotations := map[string]string{
 		"nginx.ingress.kubernetes.io/rewrite-target":     "/",
@@ -493,13 +493,13 @@ func (r *ReconcileCodewind) ingressForCodewindGatekeeper(codewind *codewindv1alp
 		Spec: extv1beta1.IngressSpec{
 			TLS: []extv1beta1.IngressTLS{
 				{
-					Hosts:      []string{"codewind-gatekeeper" + "-" + codewind.Spec.WorkspaceID + "." + codewind.Spec.IngressDomain},
+					Hosts:      []string{"codewind-gatekeeper" + "-" + codewind.Spec.WorkspaceID + "." + ingressDomain},
 					SecretName: "secret-codewind-tls" + "-" + codewind.Spec.WorkspaceID,
 				},
 			},
 			Rules: []extv1beta1.IngressRule{
 				{
-					Host: "codewind-gatekeeper" + "-" + codewind.Spec.WorkspaceID + "." + codewind.Spec.IngressDomain,
+					Host: "codewind-gatekeeper" + "-" + codewind.Spec.WorkspaceID + "." + ingressDomain,
 					IngressRuleValue: extv1beta1.IngressRuleValue{
 						HTTP: &extv1beta1.HTTPIngressRuleValue{
 							Paths: []extv1beta1.HTTPIngressPath{
@@ -545,9 +545,9 @@ func (r *ReconcileCodewind) buildGatekeeperSecretSession(codewind *codewindv1alp
 }
 
 // buildGatekeeperSecretTLS :  builds a TLS secret for gatekeeper
-func (r *ReconcileCodewind) buildGatekeeperSecretTLS(codewind *codewindv1alpha1.Codewind) *corev1.Secret {
+func (r *ReconcileCodewind) buildGatekeeperSecretTLS(codewind *codewindv1alpha1.Codewind, ingressDomain string) *corev1.Secret {
 	metaLabels := labelsForCodewindGatekeeper(codewind)
-	pemPrivateKey, pemPublicCert, _ := util.GenerateCertificate("codewind-gatekeeper-"+codewind.Spec.WorkspaceID+"."+codewind.Spec.IngressDomain, "Codewind"+"-"+codewind.Spec.WorkspaceID)
+	pemPrivateKey, pemPublicCert, _ := util.GenerateCertificate("codewind-gatekeeper-"+codewind.Spec.WorkspaceID+"."+ingressDomain, "Codewind"+"-"+codewind.Spec.WorkspaceID)
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
