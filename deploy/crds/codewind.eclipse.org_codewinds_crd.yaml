@@ -21,7 +21,7 @@ spec:
     name: Auth
     type: string
   - JSONPath: .status.keycloadStatus
-    description: Keycload configuration status
+    description: Keycloak configuration status
     name: Keycloak
     type: string
   - JSONPath: .status.accessURL
@@ -39,6 +39,7 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
+      description: Codewind is the Schema for the codewinds API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
