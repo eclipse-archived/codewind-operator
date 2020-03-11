@@ -63,9 +63,12 @@ const (
 	// ConstKeycloakConfigStarted : Keycloak config started
 	ConstKeycloakConfigStarted = "Started"
 
-	// ConstKeycloakConfigReady : Keycloak config completed and ready
-	ConstKeycloakConfigReady = "Ready"
+	// ConstKeycloakConfigReady : Keycloak config completed
+	ConstKeycloakConfigReady = "Completed"
 
 	// ROKSStorageClass references the storage class to use on ROKS (OpenShift on IKS)
 	ROKSStorageClass = "ibmc-file-bronze"
+
+	// ConfigMapLocation : Codewind Operator config map defaults
+	ConfigMapLocation = "deploy/codewind-configmap.yaml"
 )

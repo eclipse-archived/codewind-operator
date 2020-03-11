@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	"github.com/eclipse/codewind-operator/pkg/util"
-	logrus "github.com/sirupsen/logrus"
+	"github.com/prometheus/common/log"
 )
 
 // RegisteredUsers : A collection of registered users
@@ -83,7 +83,7 @@ func SecUserGet(httpClient util.HTTPClient, keycloakConfig *KeycloakConfiguratio
 func SecUserAddRole(httpClient util.HTTPClient, keycloakConfig *KeycloakConfiguration, accessToken string, roleName string) *SecError {
 
 	// lookup an existing user
-	logrus.Tracef("Looking up user : %v", keycloakConfig.DevUsername)
+	log.Infof("Looking up user : %v", keycloakConfig.DevUsername)
 	registeredUser, secErr := SecUserGet(httpClient, keycloakConfig, accessToken)
 	if secErr != nil {
 		return secErr
@@ -96,7 +96,7 @@ func SecUserAddRole(httpClient util.HTTPClient, keycloakConfig *KeycloakConfigur
 	}
 
 	// build REST request
-	logrus.Printf("Adding role '%v' to user : '%v'", existingRole.Name, registeredUser.ID)
+	log.Infof("Adding role '%v' to user : '%v'", existingRole.Name, registeredUser.ID)
 	url := keycloakConfig.AuthURL + "/auth/admin/realms/" + keycloakConfig.RealmName + "/users/" + registeredUser.ID + "/role-mappings/realm"
 
 	type PayloadRole struct {

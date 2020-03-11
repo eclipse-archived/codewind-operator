@@ -2,15 +2,19 @@ package keycloak
 
 import (
 	"context"
+	"io/ioutil"
+	"os"
 
 	codewindv1alpha1 "github.com/eclipse/codewind-operator/pkg/apis/codewind/v1alpha1"
+	defaults "github.com/eclipse/codewind-operator/pkg/controller/defaults"
 	"github.com/eclipse/codewind-operator/pkg/util"
 	v1 "github.com/openshift/api/route/v1"
-	"github.com/sirupsen/logrus"
+	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
+	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,7 +36,39 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler : returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
+	reconciler := &ReconcileKeycloak{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	operatorNamespace, _ := k8sutil.GetOperatorNamespace()
+	if operatorNamespace == "" {
+		operatorNamespace = "codewind"
+	}
+	createOperatorConfigMap(reconciler, operatorNamespace)
 	return &ReconcileKeycloak{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+}
+
+func createOperatorConfigMap(reconciler *ReconcileKeycloak, operatorNamespace string) {
+	// Create an intial config map if one is not already installed
+	log.Info("Checking operator config map")
+	configMap := &corev1.ConfigMap{}
+	configMap.Namespace = operatorNamespace
+	configMap.Name = "codewind-operator"
+	fData, err := ioutil.ReadFile(defaults.ConfigMapLocation)
+	if err != nil {
+		log.Error(err, "Failed to read config map defaults", defaults.ConfigMapLocation)
+		os.Exit(1)
+	}
+	err = yaml.Unmarshal(fData, configMap)
+	if err != nil {
+		log.Error(err, "Failed to parse defaults config map from file", defaults.ConfigMapLocation)
+		os.Exit(1)
+	}
+	configMap.Namespace = operatorNamespace
+	err = reconciler.client.Create(context.TODO(), configMap)
+	if err != nil && !k8serr.IsAlreadyExists(err) {
+		log.Error(err, "Failed to create a new operator config map", configMap.Name)
+		os.Exit(1)
+	} else {
+		log.Info("New config map created", "name", configMap.Name)
+	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -40,7 +76,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 	isOpenshift, _, err := util.DetectOpenShift()
 	if err != nil {
-		logrus.Errorf("Error detecting platfom: %s", err)
+		log.Error(err, "Error detecting platfom", "")
 	}
 
 	// Create a new controller
@@ -141,26 +177,26 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	isOpenshift, _, err := util.DetectOpenShift()
 	if err != nil {
-		logrus.Errorf("An error occurred when detecting current infrastructure: %s", err)
+		reqLogger.Error(err, "An error occurred when detecting current infrastructure", "")
 	}
 
 	// Fetch the Keycloak instance
 	keycloak := &codewindv1alpha1.Keycloak{}
 	err = r.client.Get(context.TODO(), request.NamespacedName, keycloak)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if k8serr.IsNotFound(err) {
 			reqLogger.Info("Keycloak resource not found. Ignoring since object must be deleted.")
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		reqLogger.Error(err, "Failed to get Keycloak.")
+		reqLogger.Error(err, "Failed to get Keycloak.", "")
 		return reconcile.Result{}, err
 	}
 
 	// Check if the Keycloak Service account already exist, if not create new ones
 	serviceAccount := &corev1.ServiceAccount{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-keycloak-" + keycloak.Spec.WorkspaceID, Namespace: keycloak.Namespace}, serviceAccount)
-	if err != nil && errors.IsNotFound(err) {
+	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new serviceAccount object
 		newServiceAccount := r.serviceAccountForKeycloak(keycloak)
 		reqLogger.Info("Creating a new service account", "Namespace", newServiceAccount.Namespace, "Name", newServiceAccount.Name)
@@ -177,7 +213,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 	// Check if the Keycloak Secrets already exist, if not create new ones
 	secret := &corev1.Secret{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "secret-keycloak-user-" + keycloak.Spec.WorkspaceID, Namespace: keycloak.Namespace}, secret)
-	if err != nil && errors.IsNotFound(err) {
+	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Secrets object
 		newSecret := r.secretsForKeycloak(keycloak)
 		reqLogger.Info("Creating a new Secret", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
@@ -194,7 +230,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 	// Check if the Keycloak PVC already exist, if not create a new one
 	keycloakPVC := &corev1.PersistentVolumeClaim{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-keycloak-pvc-" + keycloak.Spec.WorkspaceID, Namespace: keycloak.Namespace}, keycloakPVC)
-	if err != nil && errors.IsNotFound(err) {
+	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Secrets object
 		newKeycloakPVC := r.pvcForKeycloak(keycloak)
 		reqLogger.Info("Creating a new PVC", "Namespace", newKeycloakPVC.Namespace, "Name", newKeycloakPVC.Name)
@@ -211,7 +247,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 	// Check if the Keycloak Deployment already exists, if not create a new one
 	deployment := &appsv1.Deployment{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-keycloak-" + keycloak.Spec.WorkspaceID, Namespace: keycloak.Namespace}, deployment)
-	if err != nil && errors.IsNotFound(err) {
+	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Deployment
 		dep := r.deploymentForKeycloak(keycloak)
 		reqLogger.Info("The workspace ID of this is:", "WorkspaceID", keycloak.Spec.WorkspaceID)
@@ -232,7 +268,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 	// Check if the Keycloak Service already exists, if not create a new one
 	service := &corev1.Service{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-keycloak-" + keycloak.Spec.WorkspaceID, Namespace: keycloak.Namespace}, service)
-	if err != nil && errors.IsNotFound(err) {
+	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Service object
 		ser := r.serviceForKeycloak(keycloak)
 		reqLogger.Info("Creating a new Service", "Namespace", ser.Namespace, "Name", ser.Name)
@@ -250,7 +286,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 		// Check if the Keycloak Ingress already exists, if not create a new one
 		route := &v1.Route{}
 		err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-keycloak-" + keycloak.Spec.WorkspaceID, Namespace: keycloak.Namespace}, route)
-		if err != nil && errors.IsNotFound(err) {
+		if err != nil && k8serr.IsNotFound(err) {
 			// Define a new Ingress object
 			ing := r.routeForKeycloak(keycloak)
 			reqLogger.Info("Creating a new route", "Namespace", ing.Namespace, "Name", ing.Name)
@@ -269,7 +305,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 		// Check if the Keycloak Ingress already exists, if not create a new one
 		ingress := &extv1beta1.Ingress{}
 		err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-keycloak-" + keycloak.Spec.WorkspaceID, Namespace: keycloak.Namespace}, ingress)
-		if err != nil && errors.IsNotFound(err) {
+		if err != nil && k8serr.IsNotFound(err) {
 			// Define a new Ingress object
 			ing := r.ingressForKeycloak(keycloak)
 			reqLogger.Info("Creating a new Ingress", "Namespace", ing.Namespace, "Name", ing.Name)

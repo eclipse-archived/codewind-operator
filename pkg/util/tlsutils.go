@@ -21,12 +21,14 @@ import (
 	"math/big"
 	"time"
 
-	logrus "github.com/sirupsen/logrus"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 // GenerateCertificate : generates a key and certificate
 // returns ServerKey ServerCert, error
 func GenerateCertificate(dnsName string, certTitle string) (string, string, error) {
+	var log = logf.Log.WithName("controller_codewind_tlsutils.go")
+
 	template := x509.Certificate{
 		SerialNumber: big.NewInt(1),
 		Subject: pkix.Name{
@@ -40,17 +42,15 @@ func GenerateCertificate(dnsName string, certTitle string) (string, string, erro
 		DNSNames:              []string{dnsName},
 	}
 
-	logrus.Println("Creating " + dnsName + " server Key")
+	log.Info("Creating " + dnsName + " server Key")
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		logrus.Errorln("Unable to create server key")
 		return "", "", err
 	}
 
-	logrus.Println("Creating " + dnsName + " server certificate")
+	log.Info("Creating " + dnsName + " server certificate")
 	certDerBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, publicKey(privateKey), privateKey)
 	if err != nil {
-		logrus.Errorf("Failed to create certificate: %s\n", err)
 		return "", "", err
 	}
 

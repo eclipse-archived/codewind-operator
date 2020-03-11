@@ -17,7 +17,6 @@ import (
 
 	"github.com/eclipse/codewind-operator/pkg/security"
 	"github.com/eclipse/codewind-operator/pkg/util"
-	"github.com/sirupsen/logrus"
 )
 
 // AddCodewindToKeycloak : sets up Keycloak with a realm, client and user
@@ -35,14 +34,14 @@ func AddCodewindToKeycloak(workspaceID string, authURL string, realmName string,
 	keycloakConfig.ClientName = clientName
 
 	// Wait for the Keycloak service to respond
-	logrus.Infof("Waiting for Keycloak to start on : %v", keycloakConfig.AuthURL)
+	log.Info("Waiting for Keycloak to start", "URL", keycloakConfig.AuthURL)
 	startErr := util.WaitForService(keycloakConfig.AuthURL, 200, 500)
 	if startErr != nil {
 		return "", errors.New("Keycloak did not start in a reasonable about of time")
 	}
 
-	logrus.Infoln("Configuring Keycloak...")
-	logrus.Infoln(keycloakConfig.AuthURL)
+	log.Info("Configuring Keycloak...")
+	log.Info(keycloakConfig.AuthURL)
 
 	tokens, secErr := security.SecAuthenticate(http.DefaultClient, &keycloakConfig)
 	if secErr != nil {
@@ -87,10 +86,10 @@ func configureKeycloakRealm(httpClient util.HTTPClient, keycloakConfig *security
 	// Check if realm is already registered
 	realm, _ := security.SecRealmGet(httpClient, keycloakConfig, accessToken)
 	if realm != nil && realm.ID != "" {
-		logrus.Infof("Updating existing Keycloak realm '%v'", realm.DisplayName)
+		log.Info("Updating existing Keycloak realm ", "name", realm.DisplayName)
 	} else {
 		// Create a new realm
-		logrus.Infoln("Creating Keycloak realm")
+		log.Info("Creating new Keycloak realm")
 		secErr := security.SecRealmCreate(httpClient, keycloakConfig, accessToken)
 		if secErr != nil {
 			return secErr
@@ -101,18 +100,17 @@ func configureKeycloakRealm(httpClient util.HTTPClient, keycloakConfig *security
 
 func configureKeycloakClient(httpClient util.HTTPClient, keycloakConfig *security.KeycloakConfiguration, accessToken string) *security.SecError {
 	// Check if the client is already registered
-	logrus.Infof("Checking for Keycloak client '%v'", keycloakConfig.ClientName)
+	log.Info("Checking for Keycloak client", "name", keycloakConfig.ClientName)
 	registeredClient, _ := security.SecClientGet(httpClient, keycloakConfig, accessToken)
-
 	if registeredClient != nil && registeredClient.ID != "" {
-		logrus.Infof("Updating existing Keycloak client '%v'", registeredClient.Name)
+		log.Info("Updating existing Keycloak client '", "name", registeredClient.Name)
 		secErr := security.SecClientAppendURL(httpClient, keycloakConfig, accessToken)
 		if secErr != nil {
 			return secErr
 		}
 	} else {
 		// Create a new client
-		logrus.Infoln("Creating Keycloak client")
+		log.Info("Creating Keycloak client")
 		secErr := security.SecClientCreate(httpClient, keycloakConfig, accessToken, keycloakConfig.GatekeeperPublicURL+"/*")
 		if secErr != nil {
 			return secErr
@@ -123,15 +121,13 @@ func configureKeycloakClient(httpClient util.HTTPClient, keycloakConfig *securit
 
 func configureKeycloakAccessRole(httpClient util.HTTPClient, keycloakConfig *security.KeycloakConfiguration, accessToken string, accessRoleName string) *security.SecError {
 	// Create a new access role for this deployment
-	logrus.Infof("Creating access role '%v' in realm '%v'", accessRoleName, keycloakConfig.RealmName)
+	log.Info("Creating access role in realm", "rolename", accessRoleName, "realmName", keycloakConfig.RealmName)
 	secErr, httpStatusCode := security.SecRoleCreate(httpClient, keycloakConfig, accessToken, accessRoleName)
-
 	if httpStatusCode == http.StatusConflict {
 		return nil
 	}
-
 	if secErr != nil {
-		logrus.Error(secErr)
+		log.Error(secErr.Err, "Access role create failed", secErr.Desc)
 		return secErr
 	}
 	return nil
@@ -143,16 +139,16 @@ func configureKeycloakUser(httpClient util.HTTPClient, keycloakConfig *security.
 	if secErr == nil && registeredUser != nil {
 		return nil
 	}
-	logrus.Error(secErr)
+	log.Error(secErr.Err, "Configuring user failed", secErr.Desc)
 	return secErr
 }
 
 // Grant the user access to this Deployment
 func grantUserAccessToDeployment(httpClient util.HTTPClient, keycloakConfig *security.KeycloakConfiguration, accessToken string) *security.SecError {
-	logrus.Printf("Grant '%v' access to deployment '%v'", keycloakConfig.DevUsername, keycloakConfig.WorkspaceID)
+	log.Info("Grant access to deployment", "Username", keycloakConfig.DevUsername, "Workspace", keycloakConfig.WorkspaceID)
 	secErr := security.SecUserAddRole(httpClient, keycloakConfig, accessToken, "codewind-"+keycloakConfig.WorkspaceID)
 	if secErr != nil {
-		logrus.Errorf("Granting access to deployment: %v", secErr)
+		log.Error(secErr.Err, "Granting access to deployment", "")
 		return secErr
 	}
 	return nil
@@ -160,12 +156,12 @@ func grantUserAccessToDeployment(httpClient util.HTTPClient, keycloakConfig *sec
 
 // // fetchClientSecret : Load client secret
 func fetchClientSecret(httpClient util.HTTPClient, keycloakConfig *security.KeycloakConfiguration, accessToken string) (*security.RegisteredClientSecret, *security.SecError) {
-	logrus.Printf("Fetching client secret for '%v'", "codewind-"+keycloakConfig.WorkspaceID)
+	secretName := "codewind-" + keycloakConfig.WorkspaceID
+	log.Info("Fetching client secret", "name", secretName)
 	registeredSecret, secErr := security.SecClientGetSecret(httpClient, keycloakConfig, accessToken)
 	if secErr != nil {
-		logrus.Errorf("Error fetching client secret %v", secErr)
+		log.Error(secErr.Err, "Error fetching client secret ", "name", secretName)
 		return nil, secErr
 	}
-	logrus.Printf("Fetching client secret for '%v'", "codewind-"+keycloakConfig.WorkspaceID)
 	return registeredSecret, nil
 }
