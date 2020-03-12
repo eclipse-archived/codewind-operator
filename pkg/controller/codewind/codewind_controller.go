@@ -11,6 +11,7 @@ import (
 
 	codewindv1alpha1 "github.com/eclipse/codewind-operator/pkg/apis/codewind/v1alpha1"
 	defaults "github.com/eclipse/codewind-operator/pkg/controller/defaults"
+	"github.com/eclipse/codewind-operator/pkg/security"
 	util "github.com/eclipse/codewind-operator/pkg/util"
 	"github.com/go-logr/logr"
 	v1 "github.com/openshift/api/route/v1"
@@ -320,21 +321,21 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
-	// TODO : pull these from the keycloak service
+	// TODO : pull these from the keycloak resource
 	keycloakRealm := defaults.CodewindAuthRealm
-	keycloakAuthURL := "https://" + "codewind-keycloak-k3a237fj.10.100.111.145.nip.io"
+	keycloakAuthURL := "https://" + "codewind-keycloak-42lk4j4.10.98.117.7.nip.io"
 	keycloakClientID := "codewind-" + codewind.Spec.WorkspaceID
 	keycloakAdminUser := "admin"
 	keycloakAdminPass := "admin"
 	gatekeeperPublicURL := "https://codewind-gatekeeper-" + codewind.Spec.WorkspaceID + "." + ingressDomain
 	logLevel := "info"
-
 	clientKey := ""
+
 	// Update Keycloak if needed
 	if codewind.Status.KeycloadStatus == "" {
 		codewind.Status.KeycloadStatus = defaults.ConstKeycloakConfigStarted
 
-		clientKey, err = AddCodewindToKeycloak(codewind.Spec.WorkspaceID, keycloakAuthURL, keycloakRealm, keycloakAdminUser, keycloakAdminPass, gatekeeperPublicURL, codewind.Spec.Username, keycloakClientID)
+		clientKey, err = security.AddCodewindToKeycloak(codewind.Spec.WorkspaceID, keycloakAuthURL, keycloakRealm, keycloakAdminUser, keycloakAdminPass, gatekeeperPublicURL, codewind.Spec.Username, keycloakClientID)
 		if err != nil {
 			reqLogger.Error(err, "Failed to update Keycloak for deployment.", "Namespace", codewind.Namespace, "ClientID", keycloakClientID)
 			return reconcile.Result{}, err
@@ -548,14 +549,14 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileCodewind) fetchKeycloakPod(reqLogger logr.Logger, request reconcile.Request, keycloakDeploymentRef string) (*corev1.Pod, error) {
+func (r *ReconcileCodewind) fetchKeycloakPod(reqLogger logr.Logger, request reconcile.Request, deploymentLabel string) (*corev1.Pod, error) {
 	keycloaks := &corev1.PodList{}
 	opts := []client.ListOption{
-		client.MatchingLabels{"app": "codewind-keycloak", "deploymentRef": keycloakDeploymentRef},
+		client.MatchingLabels{"app": "codewind-keycloak", "deploymentLabel": deploymentLabel},
 	}
 	err := r.client.List(context.TODO(), keycloaks, opts...)
 	if len(keycloaks.Items) == 0 {
-		err = fmt.Errorf("Unable to find Keycloak deployment '%s'", keycloakDeploymentRef)
+		err = fmt.Errorf("Unable to find Keycloak deploymentLabel:'%s'", deploymentLabel)
 		return nil, err
 	}
 	keycloakPod := keycloaks.Items[0]

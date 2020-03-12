@@ -3,9 +3,10 @@ apiVersion: codewind.eclipse.org/v1alpha1
 kind: Codewind
 metadata:
   name: codewind-k81235kj
+  namespace: codewind
 spec:
   workspaceID: k81235kj
-  keycloakDeployment: devex-0001
+  keycloakDeployment: devex001
   logLevel: info
-  username: cody-sprint
+  username: jane
   storageSize: 10Gi

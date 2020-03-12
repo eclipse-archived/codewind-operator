@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	"github.com/eclipse/codewind-operator/pkg/util"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // RegisteredUsers : A collection of registered users

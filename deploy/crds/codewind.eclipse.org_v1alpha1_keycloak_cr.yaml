@@ -2,7 +2,8 @@
 apiVersion: codewind.eclipse.org/v1alpha1
 kind: Keycloak
 metadata:
-  name: codewind-keycloak-k3a237fj
+  name: codewind-keycloak
+  namespace: codewind
 spec:
-  workspaceID: k3a237fj
-  deploymentRef: devex-0001
+  workspaceID: 42lk4j4
+  deploymentLabel: devex001

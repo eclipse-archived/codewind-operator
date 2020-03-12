@@ -36,7 +36,7 @@ func (r *ReconcileKeycloak) serviceAccountForKeycloak(keycloak *codewindv1alpha1
 }
 
 // pvcForKeycloak function takes in a Keycloak object and returns a PVC for that object.
-func (r *ReconcileKeycloak) pvcForKeycloak(keycloak *codewindv1alpha1.Keycloak) *corev1.PersistentVolumeClaim {
+func (r *ReconcileKeycloak) pvcForKeycloak(keycloak *codewindv1alpha1.Keycloak, storageClassName string) *corev1.PersistentVolumeClaim {
 	ls := labelsForKeycloak(keycloak)
 
 	pvc := &corev1.PersistentVolumeClaim{
@@ -59,6 +59,11 @@ func (r *ReconcileKeycloak) pvcForKeycloak(keycloak *codewindv1alpha1.Keycloak) 
 				},
 			},
 		},
+	}
+
+	// If a storage class was passed in, set it in the PVC
+	if storageClassName != "" {
+		pvc.Spec.StorageClassName = &storageClassName
 	}
 
 	// Set Keycloak instance as the owner of the persistent volume claim.
@@ -285,5 +290,5 @@ func (r *ReconcileKeycloak) ingressForKeycloak(keycloak *codewindv1alpha1.Keyclo
 // labelsForKeycloak returns the labels for selecting the resources
 // belonging to the given keycloak CR name.
 func labelsForKeycloak(keycloak *codewindv1alpha1.Keycloak) map[string]string {
-	return map[string]string{"app": "codewind-keycloak", "deploymentRef": keycloak.Spec.DeploymentReference}
+	return map[string]string{"app": "codewind-keycloak", "deploymentLabel": keycloak.Spec.DeploymentLabel}
 }

@@ -36,8 +36,6 @@ func WaitForService(url string, successStatusCode int, maxRetries int) error {
 			fmt.Println(".")
 			return nil
 		}
-		fmt.Println(err)
-		fmt.Print("*")
 		time.Sleep(1 * time.Second)
 		retries++
 		if retries == maxRetries {

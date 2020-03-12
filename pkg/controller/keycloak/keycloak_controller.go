@@ -7,12 +7,14 @@ import (
 
 	codewindv1alpha1 "github.com/eclipse/codewind-operator/pkg/apis/codewind/v1alpha1"
 	defaults "github.com/eclipse/codewind-operator/pkg/controller/defaults"
+	"github.com/eclipse/codewind-operator/pkg/security"
 	"github.com/eclipse/codewind-operator/pkg/util"
 	v1 "github.com/openshift/api/route/v1"
 	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
+	storagev1 "k8s.io/api/storage/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -49,18 +51,18 @@ func createOperatorConfigMap(reconciler *ReconcileKeycloak, operatorNamespace st
 	configMap.Name = defaults.OperatorConfigMapName
 	fData, err := ioutil.ReadFile(defaults.ConfigMapLocation)
 	if err != nil {
-		log.Error(err, "Failed to read config map defaults", defaults.ConfigMapLocation)
+		log.Error(err, "Failed to read config map defaults", "Location", defaults.ConfigMapLocation)
 		os.Exit(1)
 	}
 	err = yaml.Unmarshal(fData, configMap)
 	if err != nil {
-		log.Error(err, "Failed to parse defaults config map from file", defaults.ConfigMapLocation)
+		log.Error(err, "Failed to parse defaults config map from file", "Location", defaults.ConfigMapLocation)
 		os.Exit(1)
 	}
 	configMap.Namespace = operatorNamespace
 	err = reconciler.client.Create(context.TODO(), configMap)
 	if err != nil && !k8serr.IsAlreadyExists(err) {
-		log.Error(err, "Failed to create a new operator config map", configMap.Name)
+		log.Error(err, "Failed to create a new operator config map", "Name", configMap.Name)
 		os.Exit(1)
 	} else {
 		log.Info("New config map created", "name", configMap.Name)
@@ -176,6 +178,15 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 		reqLogger.Error(err, "An error occurred when detecting current infrastructure", "")
 	}
 
+	// Use ROKSStorageClassGID when it is available
+	storageClassName := ""
+	storageClassDef := &storagev1.StorageClass{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.ROKSStorageClassGID, Namespace: ""}, storageClassDef)
+	if err == nil {
+		reqLogger.Info("Using storageclass", "name", defaults.ROKSStorageClassGID)
+		storageClassName = defaults.ROKSStorageClassGID
+	}
+
 	// Fetch the Keycloak instance
 	keycloak := &codewindv1alpha1.Keycloak{}
 	err = r.client.Get(context.TODO(), request.NamespacedName, keycloak)
@@ -202,7 +213,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 	ingressDomain := operatorConfigMap.Data["ingressDomain"]
 	reqLogger.Info("Ingress Domain", "value", ingressDomain)
 
-	// Check if the Keycloak Service account already exist, if not create new ones
+	// Check if the Keycloak Service account already exist, if not create a new one
 	serviceAccount := &corev1.ServiceAccount{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-keycloak-" + keycloak.Spec.WorkspaceID, Namespace: keycloak.Namespace}, serviceAccount)
 	if err != nil && k8serr.IsNotFound(err) {
@@ -220,15 +231,15 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 	}
 
 	// Check if the Keycloak Secrets already exist, if not create new ones
-	secret := &corev1.Secret{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "secret-keycloak-user-" + keycloak.Spec.WorkspaceID, Namespace: keycloak.Namespace}, secret)
+	secretUser := &corev1.Secret{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "secret-keycloak-user-" + keycloak.Spec.WorkspaceID, Namespace: keycloak.Namespace}, secretUser)
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Secrets object
-		newSecret := r.secretsForKeycloak(keycloak)
-		reqLogger.Info("Creating a new Secret", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
-		err = r.client.Create(context.TODO(), newSecret)
+		secretUser = r.secretsForKeycloak(keycloak)
+		reqLogger.Info("Creating a new Secret", "Namespace", secretUser.Namespace, "Name", secretUser.Name)
+		err = r.client.Create(context.TODO(), secretUser)
 		if err != nil {
-			reqLogger.Error(err, "Failed to create new Secret.", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
+			reqLogger.Error(err, "Failed to create new Secret.", "Namespace", secretUser.Namespace, "Name", secretUser.Name)
 			return reconcile.Result{}, err
 		}
 	} else if err != nil {
@@ -240,8 +251,8 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 	keycloakPVC := &corev1.PersistentVolumeClaim{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-keycloak-pvc-" + keycloak.Spec.WorkspaceID, Namespace: keycloak.Namespace}, keycloakPVC)
 	if err != nil && k8serr.IsNotFound(err) {
-		// Define a new Secrets object
-		newKeycloakPVC := r.pvcForKeycloak(keycloak)
+		// Define a new PVC object
+		newKeycloakPVC := r.pvcForKeycloak(keycloak, storageClassName)
 		reqLogger.Info("Creating a new PVC", "Namespace", newKeycloakPVC.Namespace, "Name", newKeycloakPVC.Name)
 		err = r.client.Create(context.TODO(), newKeycloakPVC)
 		if err != nil {
@@ -327,6 +338,17 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 			keycloak.Status.AccessURL = "https://codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + ingressDomain
 		} else if err != nil {
 			reqLogger.Error(err, "Failed to get Keycloak Ingress")
+			return reconcile.Result{}, err
+		}
+	}
+
+	// Update keycloak with realm configuration
+	defaultRealm := operatorConfigMap.Data["defaultRealm"]
+	if keycloak.Status.DefaultRealm != defaultRealm {
+		keycloak.Status.DefaultRealm = defaultRealm
+		err = security.AddCodewindRealmToKeycloak("https://codewind-keycloak-"+keycloak.Spec.WorkspaceID+"."+ingressDomain, defaultRealm, string(secretUser.Data["keycloak-admin-user"]), string(secretUser.Data["keycloak-admin-password"]))
+		if err != nil {
+			reqLogger.Error(err, "Failed configuring keycloak with codewind default realm", "Namespace", keycloak.Namespace, "keycloakRealm", operatorConfigMap.Data["defaultRealm"])
 			return reconcile.Result{}, err
 		}
 	}

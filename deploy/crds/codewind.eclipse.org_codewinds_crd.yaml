@@ -18,11 +18,11 @@ spec:
     type: date
   - JSONPath: .spec.keycloakDeployment
     description: Deployment reference name
-    name: Auth
+    name: Keycloak
     type: string
   - JSONPath: .status.keycloadStatus
     description: Keycloak configuration status
-    name: Keycloak
+    name: AuthStatus
     type: string
   - JSONPath: .status.accessURL
     description: Exposed route

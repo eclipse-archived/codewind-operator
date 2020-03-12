@@ -38,8 +38,8 @@ type CodewindStatus struct {
 // +kubebuilder:printcolumn:name="Username",type="string",JSONPath=".spec.username",priority=0,description="Deployment reference name"
 // +kubebuilder:printcolumn:name="Namespace",type="string",JSONPath=".metadata.namespace",priority=0,description="Deployment namespace"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",priority=0,description="Age of the resource"
-// +kubebuilder:printcolumn:name="Auth",type="string",JSONPath=".spec.keycloakDeployment",priority=0,description="Deployment reference name"
-// +kubebuilder:printcolumn:name="Keycloak",type="string",JSONPath=".status.keycloadStatus",priority=0,description="Keycloak configuration status"
+// +kubebuilder:printcolumn:name="Keycloak",type="string",JSONPath=".spec.keycloakDeployment",priority=0,description="Deployment reference name"
+// +kubebuilder:printcolumn:name="AuthStatus",type="string",JSONPath=".status.keycloadStatus",priority=0,description="Keycloak configuration status"
 // +kubebuilder:printcolumn:name="AccessURL",type="string",JSONPath=".status.accessURL",priority=0,description="Exposed route"
 type Codewind struct {
 	metav1.TypeMeta   `json:",inline"`

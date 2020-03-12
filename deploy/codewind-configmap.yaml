@@ -3,4 +3,5 @@ kind: ConfigMap
 metadata:
   name: codewind-operator
 data:
-  ingressDomain: 10.100.111.145.nip.io
+  ingressDomain: 10.98.117.7.nip.io
+  defaultRealm: codewind
