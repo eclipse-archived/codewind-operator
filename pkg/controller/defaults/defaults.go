@@ -28,9 +28,6 @@ const (
 	// CodewindGatekeeperImageTag is the Image tag used by Codewind
 	CodewindGatekeeperImageTag = "0.9.0"
 
-	// PFEStorageSize is the size of the PVC used by Codewind PFE
-	PFEStorageSize = "10Gi"
-
 	// CodewindAuthRealm : Codewind security realm within Keycloak
 	CodewindAuthRealm = "codewind"
 

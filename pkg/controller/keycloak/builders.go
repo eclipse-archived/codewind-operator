@@ -36,7 +36,7 @@ func (r *ReconcileKeycloak) serviceAccountForKeycloak(keycloak *codewindv1alpha1
 }
 
 // pvcForKeycloak function takes in a Keycloak object and returns a PVC for that object.
-func (r *ReconcileKeycloak) pvcForKeycloak(keycloak *codewindv1alpha1.Keycloak, storageClassName string) *corev1.PersistentVolumeClaim {
+func (r *ReconcileKeycloak) pvcForKeycloak(keycloak *codewindv1alpha1.Keycloak, storageClassName string, storageKeycloakSize string) *corev1.PersistentVolumeClaim {
 	ls := labelsForKeycloak(keycloak)
 
 	pvc := &corev1.PersistentVolumeClaim{
@@ -55,7 +55,7 @@ func (r *ReconcileKeycloak) pvcForKeycloak(keycloak *codewindv1alpha1.Keycloak, 
 			},
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
-					corev1.ResourceStorage: resource.MustParse("1Gi"),
+					corev1.ResourceStorage: resource.MustParse(storageKeycloakSize),
 				},
 			},
 		},

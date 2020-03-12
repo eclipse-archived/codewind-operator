@@ -213,6 +213,9 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 	ingressDomain := operatorConfigMap.Data["ingressDomain"]
 	reqLogger.Info("Ingress Domain", "value", ingressDomain)
 
+	storageKeycloakSize := operatorConfigMap.Data["storageKeycloakSize"]
+	reqLogger.Info("Default Storage Size Keycloak", "value", storageKeycloakSize)
+
 	// Check if the Keycloak Service account already exist, if not create a new one
 	serviceAccount := &corev1.ServiceAccount{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-keycloak-" + keycloak.Spec.WorkspaceID, Namespace: keycloak.Namespace}, serviceAccount)
@@ -252,7 +255,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-keycloak-pvc-" + keycloak.Spec.WorkspaceID, Namespace: keycloak.Namespace}, keycloakPVC)
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new PVC object
-		newKeycloakPVC := r.pvcForKeycloak(keycloak, storageClassName)
+		newKeycloakPVC := r.pvcForKeycloak(keycloak, storageClassName, storageKeycloakSize)
 		reqLogger.Info("Creating a new PVC", "Namespace", newKeycloakPVC.Namespace, "Name", newKeycloakPVC.Name)
 		err = r.client.Create(context.TODO(), newKeycloakPVC)
 		if err != nil {

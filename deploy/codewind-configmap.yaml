@@ -5,3 +5,5 @@ metadata:
 data:
   ingressDomain: 10.98.117.7.nip.io
   defaultRealm: codewind
+  storageKeycloakSize: 1Gi
+  storageCodewindSize: 10Gi

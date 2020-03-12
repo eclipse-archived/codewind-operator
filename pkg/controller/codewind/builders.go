@@ -37,9 +37,8 @@ func (r *ReconcileCodewind) serviceAccountForCodewind(codewind *codewindv1alpha1
 }
 
 // pvcForCodewind function takes in a Codewind object and returns a PVC for that object.
-func (r *ReconcileCodewind) pvcForCodewind(codewind *codewindv1alpha1.Codewind, storageClassName string) *corev1.PersistentVolumeClaim {
+func (r *ReconcileCodewind) pvcForCodewind(codewind *codewindv1alpha1.Codewind, storageClassName string, storageSize string) *corev1.PersistentVolumeClaim {
 	labels := labelsForCodewindPFE(codewind)
-	storageSize := defaults.PFEStorageSize
 	if codewind.Spec.StorageSize != "" {
 		storageSize = codewind.Spec.StorageSize
 	}

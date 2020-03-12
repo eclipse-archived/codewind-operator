@@ -185,6 +185,9 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	ingressDomain := operatorConfigMap.Data["ingressDomain"]
 	reqLogger.Info("Ingress Domain", "value", ingressDomain)
 
+	storageSize := operatorConfigMap.Data["storageCodewindSize"]
+	reqLogger.Info("Default Storage Size Codewind", "value", storageSize)
+
 	reqLogger.Info("Reconciling Codewind")
 	// get the operator config map
 	configMap := &corev1.ConfigMap{}
@@ -309,7 +312,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	codewindPVC := &corev1.PersistentVolumeClaim{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-pfe-pvc-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, codewindPVC)
 	if err != nil && k8serr.IsNotFound(err) {
-		newCodewindPVC := r.pvcForCodewind(codewind, storageClassName)
+		newCodewindPVC := r.pvcForCodewind(codewind, storageClassName, storageSize)
 		reqLogger.Info("Creating a new Codewind PFE PVC", "Namespace", newCodewindPVC.Namespace, "Name", newCodewindPVC.Name)
 		err = r.client.Create(context.TODO(), newCodewindPVC)
 		if err != nil {
