@@ -549,14 +549,14 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileCodewind) fetchKeycloakPod(reqLogger logr.Logger, request reconcile.Request, deploymentLabel string) (*corev1.Pod, error) {
+func (r *ReconcileCodewind) fetchKeycloakPod(reqLogger logr.Logger, request reconcile.Request, authDeploymentName string) (*corev1.Pod, error) {
 	keycloaks := &corev1.PodList{}
 	opts := []client.ListOption{
-		client.MatchingLabels{"app": "codewind-keycloak", "deploymentLabel": deploymentLabel},
+		client.MatchingLabels{"app": "codewind-keycloak", "authName": authDeploymentName},
 	}
 	err := r.client.List(context.TODO(), keycloaks, opts...)
 	if len(keycloaks.Items) == 0 {
-		err = fmt.Errorf("Unable to find Keycloak deploymentLabel:'%s'", deploymentLabel)
+		err = fmt.Errorf("Unable to find Keycloak authName:'%s'", authDeploymentName)
 		return nil, err
 	}
 	keycloakPod := keycloaks.Items[0]

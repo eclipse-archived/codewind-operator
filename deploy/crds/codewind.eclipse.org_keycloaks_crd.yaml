@@ -4,10 +4,6 @@ metadata:
   name: keycloaks.codewind.eclipse.org
 spec:
   additionalPrinterColumns:
-  - JSONPath: .spec.deploymentLabel
-    description: Deployment label
-    name: Label
-    type: string
   - JSONPath: .metadata.namespace
     description: Deployment namespace
     name: Namespace
@@ -48,16 +44,12 @@ spec:
         spec:
           description: KeycloakSpec defines the desired state of Keycloak
           properties:
-            deploymentLabel:
-              description: 'deploymentLabel : A label for this instance'
-              type: string
             workspaceID:
               description: 'Important: Run "operator-sdk generate k8s" to regenerate
                 code after modifying this file WorkspaceID : A workspace reference
                 ID for this instance'
               type: string
           required:
-          - deploymentLabel
           - workspaceID
           type: object
         status:

@@ -9,8 +9,6 @@ type KeycloakSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// WorkspaceID : A workspace reference ID for this instance
 	WorkspaceID string `json:"workspaceID"`
-	// deploymentLabel : A label for this instance
-	DeploymentLabel string `json:"deploymentLabel"`
 }
 
 // KeycloakStatus defines the observed state of Keycloak
@@ -26,7 +24,6 @@ type KeycloakStatus struct {
 // Keycloak is the Schema for the keycloaks API
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=keycloaks,scope=Namespaced
-// +kubebuilder:printcolumn:name="Label",type="string",JSONPath=".spec.deploymentLabel",priority=0,description="Deployment label"
 // +kubebuilder:printcolumn:name="Namespace",type="string",JSONPath=".metadata.namespace",priority=0,description="Deployment namespace"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",priority=0,description="Age of the resource"
 // +kubebuilder:printcolumn:name="Access",type="string",JSONPath=".status.url",priority=0,description="Exposed route"

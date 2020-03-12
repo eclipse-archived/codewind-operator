@@ -6,7 +6,7 @@ metadata:
   namespace: codewind
 spec:
   workspaceID: k81235kj
-  keycloakDeployment: devex001
+  keycloakDeployment: codewind-keycloak
   logLevel: info
   username: jane
   storageSize: 10Gi

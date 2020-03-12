@@ -6,4 +6,3 @@ metadata:
   namespace: codewind
 spec:
   workspaceID: 42lk4j4
-  deploymentLabel: devex001

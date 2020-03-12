@@ -290,5 +290,5 @@ func (r *ReconcileKeycloak) ingressForKeycloak(keycloak *codewindv1alpha1.Keyclo
 // labelsForKeycloak returns the labels for selecting the resources
 // belonging to the given keycloak CR name.
 func labelsForKeycloak(keycloak *codewindv1alpha1.Keycloak) map[string]string {
-	return map[string]string{"app": "codewind-keycloak", "deploymentLabel": keycloak.Spec.DeploymentLabel}
+	return map[string]string{"app": "codewind-keycloak", "authName": keycloak.Name}
 }
