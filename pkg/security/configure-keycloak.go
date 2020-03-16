@@ -87,7 +87,7 @@ func AddCodewindRealmToKeycloak(authURL string, realmName string, keycloakAdminU
 	keycloakConfig.KeycloakAdminUsername = keycloakAdminUser
 
 	// Wait for the Keycloak service to respond
-	log.Info("AddRealm: Waiting for Keycloak to start", "realm", keycloakConfig.RealmName, "URL", keycloakConfig.AuthURL)
+	log.Info("AddRealm: Checking Keycloak service is responding", "realm", keycloakConfig.RealmName, "URL", keycloakConfig.AuthURL)
 	startErr := util.WaitForService(keycloakConfig.AuthURL, 200, 500)
 	if startErr != nil {
 		return errors.New("Keycloak did not start in a reasonable about of time")
