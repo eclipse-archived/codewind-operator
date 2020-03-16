@@ -33,7 +33,7 @@ type RegisteredUser struct {
 	Username string `json:"username"`
 }
 
-var log = logf.Log.WithName("codewind-operator-security.user")
+var log = logf.Log.WithName("codewind-operator-security")
 
 // SecUserGet : Get user from Keycloak
 func SecUserGet(httpClient util.HTTPClient, keycloakConfig *KeycloakConfiguration, accessToken string) (*RegisteredUser, *SecError) {

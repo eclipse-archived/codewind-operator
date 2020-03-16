@@ -1,6 +1,20 @@
 package defaults
 
 const (
+	// PrefixCodewindPerformance : Codewind performance application
+	PrefixCodewindPerformance = "codewind-performance"
+
+	// PrefixCodewindPFE : Codewind pfe application
+	PrefixCodewindPFE = "codewind-pfe"
+
+	// PrefixCodewindGatekeeper : Codewind-gatekeeper application
+	PrefixCodewindGatekeeper = "codewind-gatekeeper"
+
+	// PrefixCodewindKeycloak : Codewind-keycloak application
+	PrefixCodewindKeycloak = "codewind-keycloak"
+)
+
+const (
 	// VersionNum : Operator version number
 	VersionNum = "0.0.1"
 
@@ -31,7 +45,7 @@ const (
 	// CodewindAuthRealm : Codewind security realm within Keycloak
 	CodewindAuthRealm = "codewind"
 
-	// PFEContainerPort is the port at which Codewind-PFE is exposed
+	// PFEContainerPort is the port at which Codewind PFE is exposed
 	PFEContainerPort = 9191
 
 	// PerformanceContainerPort is the port at which the Performance dashboard is exposed

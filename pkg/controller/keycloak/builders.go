@@ -23,7 +23,7 @@ func (r *ReconcileKeycloak) serviceAccountForKeycloak(keycloak *codewindv1alpha1
 			Kind:       "ServiceAccount",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "codewind-keycloak-" + keycloak.Spec.WorkspaceID,
+			Name:      defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
 			Namespace: keycloak.Namespace,
 			Labels:    ls,
 		},
@@ -45,7 +45,7 @@ func (r *ReconcileKeycloak) pvcForKeycloak(keycloak *codewindv1alpha1.Keycloak, 
 			Kind:       "PersistentVolumeClaim",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "codewind-keycloak-pvc-" + keycloak.Spec.WorkspaceID,
+			Name:      defaults.PrefixCodewindKeycloak + "-pvc-" + keycloak.Name,
 			Namespace: keycloak.Namespace,
 			Labels:    ls,
 		},
@@ -80,7 +80,7 @@ func (r *ReconcileKeycloak) secretsForKeycloak(keycloak *codewindv1alpha1.Keyclo
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret-keycloak-user-" + keycloak.Spec.WorkspaceID,
+			Name:      "secret-keycloak-user-" + keycloak.Name,
 			Namespace: keycloak.Namespace,
 			Labels:    ls,
 		},
@@ -99,7 +99,7 @@ func (r *ReconcileKeycloak) serviceForKeycloak(keycloak *codewindv1alpha1.Keyclo
 	ls := labelsForKeycloak(keycloak)
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "codewind-keycloak-" + keycloak.Spec.WorkspaceID,
+			Name:      defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
 			Namespace: keycloak.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
@@ -107,7 +107,7 @@ func (r *ReconcileKeycloak) serviceForKeycloak(keycloak *codewindv1alpha1.Keyclo
 			Ports: []corev1.ServicePort{
 				{
 					Port: int32(defaults.KeycloakContainerPort),
-					Name: "codewind-keycloak-http",
+					Name: defaults.PrefixCodewindKeycloak + "-http",
 				},
 			},
 		},
@@ -124,7 +124,7 @@ func (r *ReconcileKeycloak) deploymentForKeycloak(keycloak *codewindv1alpha1.Key
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "codewind-keycloak-" + keycloak.Spec.WorkspaceID,
+			Name:      defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
 			Namespace: keycloak.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -137,19 +137,19 @@ func (r *ReconcileKeycloak) deploymentForKeycloak(keycloak *codewindv1alpha1.Key
 					Labels: ls,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: "codewind-keycloak-" + keycloak.Spec.WorkspaceID,
+					ServiceAccountName: defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
 					Volumes: []corev1.Volume{
 						{
 							Name: "keycloak-data",
 							VolumeSource: corev1.VolumeSource{
 								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: "codewind-keycloak-pvc-" + keycloak.Spec.WorkspaceID,
+									ClaimName: defaults.PrefixCodewindKeycloak + "-pvc-" + keycloak.Name,
 								},
 							},
 						},
 					},
 					Containers: []corev1.Container{{
-						Name:            "codewind-keycloak",
+						Name:            defaults.PrefixCodewindKeycloak,
 						Image:           defaults.KeycloakImage + ":" + defaults.KeycloakImageTag,
 						ImagePullPolicy: corev1.PullAlways,
 						VolumeMounts: []corev1.VolumeMount{
@@ -162,12 +162,12 @@ func (r *ReconcileKeycloak) deploymentForKeycloak(keycloak *codewindv1alpha1.Key
 							{
 								Name: "KEYCLOAK_USER",
 								ValueFrom: &corev1.EnvVarSource{
-									SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "secret-keycloak-user" + "-" + keycloak.Spec.WorkspaceID}, Key: "keycloak-admin-user"}},
+									SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "secret-keycloak-user" + "-" + keycloak.Name}, Key: "keycloak-admin-user"}},
 							},
 							{
 								Name: "KEYCLOAK_PASSWORD",
 								ValueFrom: &corev1.EnvVarSource{
-									SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "secret-keycloak-user" + "-" + keycloak.Spec.WorkspaceID}, Key: "keycloak-admin-password"}},
+									SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "secret-keycloak-user" + "-" + keycloak.Name}, Key: "keycloak-admin-password"}},
 							},
 							{
 								Name:  "PROXY_ADDRESS_FORWARDING",
@@ -207,13 +207,13 @@ func (r *ReconcileKeycloak) routeForKeycloak(keycloak *codewindv1alpha1.Keycloak
 			Kind:       "Route",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        "codewind-keycloak-" + keycloak.Spec.WorkspaceID,
+			Name:        defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
 			Namespace:   keycloak.Namespace,
 			Annotations: annotations,
 			Labels:      ls,
 		},
 		Spec: v1.RouteSpec{
-			Host: "codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + ingressDomain,
+			Host: defaults.PrefixCodewindKeycloak + "-" + keycloak.Name + "." + ingressDomain,
 			Port: &v1.RoutePort{
 				TargetPort: intstr.FromInt(defaults.KeycloakContainerPort),
 			},
@@ -223,7 +223,7 @@ func (r *ReconcileKeycloak) routeForKeycloak(keycloak *codewindv1alpha1.Keycloak
 			},
 			To: v1.RouteTargetReference{
 				Kind:   "Service",
-				Name:   "codewind-keycloak-" + keycloak.Spec.WorkspaceID,
+				Name:   defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
 				Weight: &weight,
 			},
 		},
@@ -249,7 +249,7 @@ func (r *ReconcileKeycloak) ingressForKeycloak(keycloak *codewindv1alpha1.Keyclo
 			Kind:       "Ingress",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        "codewind-keycloak-" + keycloak.Spec.WorkspaceID,
+			Name:        defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
 			Namespace:   keycloak.Namespace,
 			Annotations: annotations,
 			Labels:      ls,
@@ -257,20 +257,20 @@ func (r *ReconcileKeycloak) ingressForKeycloak(keycloak *codewindv1alpha1.Keyclo
 		Spec: extv1beta1.IngressSpec{
 			TLS: []extv1beta1.IngressTLS{
 				{
-					Hosts:      []string{"codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + ingressDomain},
-					SecretName: "secret-keycloak-tls" + "-" + keycloak.Spec.WorkspaceID,
+					Hosts:      []string{defaults.PrefixCodewindKeycloak + "-" + keycloak.Name + "." + ingressDomain},
+					SecretName: "secret-keycloak-tls" + "-" + keycloak.Name,
 				},
 			},
 			Rules: []extv1beta1.IngressRule{
 				{
-					Host: "codewind-keycloak-" + keycloak.Spec.WorkspaceID + "." + ingressDomain,
+					Host: defaults.PrefixCodewindKeycloak + "-" + keycloak.Name + "." + ingressDomain,
 					IngressRuleValue: extv1beta1.IngressRuleValue{
 						HTTP: &extv1beta1.HTTPIngressRuleValue{
 							Paths: []extv1beta1.HTTPIngressPath{
 								{
 									Path: "/",
 									Backend: extv1beta1.IngressBackend{
-										ServiceName: "codewind-keycloak-" + keycloak.Spec.WorkspaceID,
+										ServiceName: defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
 										ServicePort: intstr.FromInt(defaults.KeycloakContainerPort),
 									},
 								},
@@ -290,5 +290,5 @@ func (r *ReconcileKeycloak) ingressForKeycloak(keycloak *codewindv1alpha1.Keyclo
 // labelsForKeycloak returns the labels for selecting the resources
 // belonging to the given keycloak CR name.
 func labelsForKeycloak(keycloak *codewindv1alpha1.Keycloak) map[string]string {
-	return map[string]string{"app": "codewind-keycloak", "authName": keycloak.Name}
+	return map[string]string{"app": defaults.PrefixCodewindKeycloak, "authName": keycloak.Name}
 }

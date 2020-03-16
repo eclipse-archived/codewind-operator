@@ -48,7 +48,7 @@ func (r *ReconcileCodewind) pvcForCodewind(codewind *codewindv1alpha1.Codewind, 
 			Kind:       "PersistentVolumeClaim",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "codewind-pfe-pvc-" + codewind.Spec.WorkspaceID,
+			Name:      defaults.PrefixCodewindPFE + "-pvc-" + codewind.Spec.WorkspaceID,
 			Namespace: codewind.Namespace,
 			Labels:    labels,
 		},
@@ -79,7 +79,7 @@ func (r *ReconcileCodewind) deploymentForCodewindPerformance(codewind *codewindv
 	replicas := int32(1)
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "codewind-performance-" + codewind.Spec.WorkspaceID,
+			Name:      defaults.PrefixCodewindPerformance + "-" + codewind.Spec.WorkspaceID,
 			Namespace: codewind.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -94,7 +94,7 @@ func (r *ReconcileCodewind) deploymentForCodewindPerformance(codewind *codewindv
 				Spec: corev1.PodSpec{
 					ServiceAccountName: "codewind-" + codewind.Spec.WorkspaceID,
 					Containers: []corev1.Container{{
-						Name:            "codewind-performance",
+						Name:            defaults.PrefixCodewindPerformance,
 						Image:           defaults.CodewindPerformanceImage + ":" + defaults.CodewindPerformanceImageTag,
 						ImagePullPolicy: corev1.PullAlways,
 						Env: []corev1.EnvVar{
@@ -108,7 +108,7 @@ func (r *ReconcileCodewind) deploymentForCodewindPerformance(codewind *codewindv
 							},
 							{
 								Name:  "CODEWIND_INGRESS",
-								Value: "codewind-gatekeeper" + codewind.Spec.WorkspaceID + "." + ingressDomain,
+								Value: defaults.PrefixCodewindGatekeeper + codewind.Spec.WorkspaceID + "." + ingressDomain,
 							},
 						},
 						Ports: []corev1.ContainerPort{
@@ -137,7 +137,7 @@ func (r *ReconcileCodewind) deploymentForCodewindPFE(codewind *codewindv1alpha1.
 			Name: "shared-workspace",
 			VolumeSource: corev1.VolumeSource{
 				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: "codewind-pfe-pvc-" + codewind.Spec.WorkspaceID,
+					ClaimName: defaults.PrefixCodewindPFE + "-pvc-" + codewind.Spec.WorkspaceID,
 				},
 			},
 		},
@@ -158,7 +158,7 @@ func (r *ReconcileCodewind) deploymentForCodewindPFE(codewind *codewindv1alpha1.
 	}
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "codewind-pfe-" + codewind.Spec.WorkspaceID,
+			Name:      defaults.PrefixCodewindPFE + "-" + codewind.Spec.WorkspaceID,
 			Namespace: codewind.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -174,7 +174,7 @@ func (r *ReconcileCodewind) deploymentForCodewindPFE(codewind *codewindv1alpha1.
 					ServiceAccountName: "codewind-" + codewind.Spec.WorkspaceID,
 					Volumes:            volumes,
 					Containers: []corev1.Container{{
-						Name:            "codewind-pfe",
+						Name:            defaults.PrefixCodewindPFE,
 						Image:           defaults.CodewindImage + ":" + defaults.CodewindImageTag,
 						ImagePullPolicy: corev1.PullAlways,
 						VolumeMounts:    volumeMounts,
@@ -205,7 +205,7 @@ func (r *ReconcileCodewind) deploymentForCodewindPFE(codewind *codewindv1alpha1.
 							},
 							{
 								Name:  "PVC_NAME",
-								Value: "codewind-pfe-pvc-" + codewind.Spec.WorkspaceID,
+								Value: defaults.PrefixCodewindPFE + "-pvc-" + codewind.Spec.WorkspaceID,
 							},
 							{
 								Name:  "SERVICE_NAME",
@@ -237,11 +237,11 @@ func (r *ReconcileCodewind) deploymentForCodewindPFE(codewind *codewindv1alpha1.
 							},
 							{
 								Name:  "CODEWIND_PERFORMANCE_SERVICE",
-								Value: "codewind-performance-" + codewind.Spec.WorkspaceID,
+								Value: defaults.PrefixCodewindPerformance + "-" + codewind.Spec.WorkspaceID,
 							},
 							{
 								Name:  "CHE_INGRESS_HOST",
-								Value: "codewind-gatekeeper-" + codewind.Spec.WorkspaceID + "." + ingressDomain,
+								Value: defaults.PrefixCodewindGatekeeper + "-" + codewind.Spec.WorkspaceID + "." + ingressDomain,
 							},
 							{
 								Name:  "INGRESS_PREFIX",
@@ -282,7 +282,7 @@ func (r *ReconcileCodewind) serviceForCodewindPFE(codewind *codewindv1alpha1.Cod
 	ls := labelsForCodewindPFE(codewind)
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "codewind-pfe-" + codewind.Spec.WorkspaceID,
+			Name:      defaults.PrefixCodewindPFE + "-" + codewind.Spec.WorkspaceID,
 			Namespace: codewind.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
@@ -305,7 +305,7 @@ func (r *ReconcileCodewind) serviceForCodewindPerformance(codewind *codewindv1al
 	ls := labelsForCodewindPerformance(codewind)
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "codewind-performance-" + codewind.Spec.WorkspaceID,
+			Name:      defaults.PrefixCodewindPerformance + "-" + codewind.Spec.WorkspaceID,
 			Namespace: codewind.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
@@ -313,7 +313,7 @@ func (r *ReconcileCodewind) serviceForCodewindPerformance(codewind *codewindv1al
 			Ports: []corev1.ServicePort{
 				{
 					Port: int32(defaults.PerformanceContainerPort),
-					Name: "codewind-performance-http",
+					Name: defaults.PrefixCodewindPerformance + "-http",
 				},
 			},
 		},
@@ -328,7 +328,7 @@ func (r *ReconcileCodewind) serviceForCodewindGatekeeper(codewind *codewindv1alp
 	ls := labelsForCodewindGatekeeper(codewind)
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "codewind-gatekeeper-" + codewind.Spec.WorkspaceID,
+			Name:      defaults.PrefixCodewindGatekeeper + "-" + codewind.Spec.WorkspaceID,
 			Namespace: codewind.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
@@ -336,7 +336,7 @@ func (r *ReconcileCodewind) serviceForCodewindGatekeeper(codewind *codewindv1alp
 			Ports: []corev1.ServicePort{
 				{
 					Port: int32(defaults.GatekeeperContainerPort),
-					Name: "codewind-gatekeeper-http",
+					Name: defaults.PrefixCodewindGatekeeper + "-http",
 				},
 			},
 		},
@@ -352,7 +352,7 @@ func (r *ReconcileCodewind) deploymentForCodewindGatekeeper(codewind *codewindv1
 	replicas := int32(1)
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "codewind-gatekeeper-" + codewind.Spec.WorkspaceID,
+			Name:      defaults.PrefixCodewindGatekeeper + "-" + codewind.Spec.WorkspaceID,
 			Namespace: codewind.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -367,7 +367,7 @@ func (r *ReconcileCodewind) deploymentForCodewindGatekeeper(codewind *codewindv1
 				Spec: corev1.PodSpec{
 					ServiceAccountName: "codewind-" + codewind.Spec.WorkspaceID,
 					Containers: []corev1.Container{{
-						Name:            "codewind-gatekeeper",
+						Name:            defaults.PrefixCodewindGatekeeper,
 						Image:           defaults.CodewindGatekeeperImage + ":" + defaults.CodewindGatekeeperImageTag,
 						ImagePullPolicy: corev1.PullAlways,
 						Env: []corev1.EnvVar{
@@ -389,7 +389,7 @@ func (r *ReconcileCodewind) deploymentForCodewindGatekeeper(codewind *codewindv1
 							},
 							{
 								Name:  "GATEKEEPER_HOST",
-								Value: "codewind-gatekeeper-" + codewind.Spec.WorkspaceID + "." + ingressDomain,
+								Value: defaults.PrefixCodewindGatekeeper + "-" + codewind.Spec.WorkspaceID + "." + ingressDomain,
 							},
 
 							{
@@ -442,12 +442,12 @@ func (r *ReconcileCodewind) routeForCodewindGatekeeper(codewind *codewindv1alpha
 			APIVersion: "route.openshift.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "codewind-gatekeeper-" + codewind.Spec.WorkspaceID,
+			Name:      defaults.PrefixCodewindGatekeeper + "-" + codewind.Spec.WorkspaceID,
 			Namespace: codewind.Namespace,
 			Labels:    ls,
 		},
 		Spec: v1.RouteSpec{
-			Host: "codewind-gatekeeper-" + ingressDomain,
+			Host: defaults.PrefixCodewindGatekeeper + "-" + ingressDomain,
 			Port: &v1.RoutePort{
 				TargetPort: intstr.FromInt(defaults.GatekeeperContainerPort),
 			},
@@ -457,7 +457,7 @@ func (r *ReconcileCodewind) routeForCodewindGatekeeper(codewind *codewindv1alpha
 			},
 			To: v1.RouteTargetReference{
 				Kind:   "Service",
-				Name:   "codewind-gatekeeper-" + codewind.Spec.WorkspaceID,
+				Name:   defaults.PrefixCodewindGatekeeper + "-" + codewind.Spec.WorkspaceID,
 				Weight: &weight,
 			},
 		},
@@ -473,7 +473,7 @@ func (r *ReconcileCodewind) ingressForCodewindGatekeeper(codewind *codewindv1alp
 	annotations := map[string]string{
 		"nginx.ingress.kubernetes.io/rewrite-target":     "/",
 		"ingress.bluemix.net/redirect-to-https":          "True",
-		"ingress.bluemix.net/ssl-services":               "ssl-service=" + "codewind-gatekeeper" + "-" + codewind.Spec.WorkspaceID,
+		"ingress.bluemix.net/ssl-services":               "ssl-service=" + defaults.PrefixCodewindGatekeeper + "-" + codewind.Spec.WorkspaceID,
 		"nginx.ingress.kubernetes.io/backend-protocol":   "HTTPS",
 		"kubernetes.io/ingress.class":                    "nginx",
 		"nginx.ingress.kubernetes.io/force-ssl-redirect": "true",
@@ -484,7 +484,7 @@ func (r *ReconcileCodewind) ingressForCodewindGatekeeper(codewind *codewindv1alp
 			Kind:       "Ingress",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        "codewind-gatekeeper" + "-" + codewind.Spec.WorkspaceID,
+			Name:        defaults.PrefixCodewindGatekeeper + "-" + codewind.Spec.WorkspaceID,
 			Annotations: annotations,
 			Namespace:   codewind.Namespace,
 			Labels:      ls,
@@ -492,20 +492,20 @@ func (r *ReconcileCodewind) ingressForCodewindGatekeeper(codewind *codewindv1alp
 		Spec: extv1beta1.IngressSpec{
 			TLS: []extv1beta1.IngressTLS{
 				{
-					Hosts:      []string{"codewind-gatekeeper" + "-" + codewind.Spec.WorkspaceID + "." + ingressDomain},
+					Hosts:      []string{defaults.PrefixCodewindGatekeeper + "-" + codewind.Spec.WorkspaceID + "." + ingressDomain},
 					SecretName: "secret-codewind-tls" + "-" + codewind.Spec.WorkspaceID,
 				},
 			},
 			Rules: []extv1beta1.IngressRule{
 				{
-					Host: "codewind-gatekeeper" + "-" + codewind.Spec.WorkspaceID + "." + ingressDomain,
+					Host: defaults.PrefixCodewindGatekeeper + "-" + codewind.Spec.WorkspaceID + "." + ingressDomain,
 					IngressRuleValue: extv1beta1.IngressRuleValue{
 						HTTP: &extv1beta1.HTTPIngressRuleValue{
 							Paths: []extv1beta1.HTTPIngressPath{
 								{
 									Path: "/",
 									Backend: extv1beta1.IngressBackend{
-										ServiceName: "codewind-gatekeeper" + "-" + codewind.Spec.WorkspaceID,
+										ServiceName: defaults.PrefixCodewindGatekeeper + "-" + codewind.Spec.WorkspaceID,
 										ServicePort: intstr.FromInt(defaults.GatekeeperContainerPort),
 									},
 								},
@@ -546,7 +546,7 @@ func (r *ReconcileCodewind) buildGatekeeperSecretSession(codewind *codewindv1alp
 // buildGatekeeperSecretTLS :  builds a TLS secret for gatekeeper
 func (r *ReconcileCodewind) buildGatekeeperSecretTLS(codewind *codewindv1alpha1.Codewind, ingressDomain string) *corev1.Secret {
 	metaLabels := labelsForCodewindGatekeeper(codewind)
-	pemPrivateKey, pemPublicCert, _ := util.GenerateCertificate("codewind-gatekeeper-"+codewind.Spec.WorkspaceID+"."+ingressDomain, "Codewind"+"-"+codewind.Spec.WorkspaceID)
+	pemPrivateKey, pemPublicCert, _ := util.GenerateCertificate(defaults.PrefixCodewindGatekeeper+"-"+codewind.Spec.WorkspaceID+"."+ingressDomain, "Codewind"+"-"+codewind.Spec.WorkspaceID)
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
@@ -592,13 +592,13 @@ func (r *ReconcileCodewind) buildGatekeeperSecretAuth(codewind *codewindv1alpha1
 // labelsForCodewindPFE returns the labels for selecting the resources
 // belonging to the given codewind CR name.
 func labelsForCodewindPFE(codewind *codewindv1alpha1.Codewind) map[string]string {
-	return map[string]string{"app": "codewind-pfe", "codewindWorkspace": codewind.Spec.WorkspaceID}
+	return map[string]string{"app": defaults.PrefixCodewindPFE, "codewindWorkspace": codewind.Spec.WorkspaceID}
 }
 
 func labelsForCodewindPerformance(codewind *codewindv1alpha1.Codewind) map[string]string {
-	return map[string]string{"app": "codewind-performance", "codewindWorkspace": codewind.Spec.WorkspaceID}
+	return map[string]string{"app": defaults.PrefixCodewindPerformance, "codewindWorkspace": codewind.Spec.WorkspaceID}
 }
 
 func labelsForCodewindGatekeeper(codewind *codewindv1alpha1.Codewind) map[string]string {
-	return map[string]string{"app": "codewind-gatekeeper", "codewindWorkspace": codewind.Spec.WorkspaceID}
+	return map[string]string{"app": defaults.PrefixCodewindGatekeeper, "codewindWorkspace": codewind.Spec.WorkspaceID}
 }

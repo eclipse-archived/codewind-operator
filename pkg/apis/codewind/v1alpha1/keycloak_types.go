@@ -7,8 +7,8 @@ import (
 // KeycloakSpec defines the desired state of Keycloak
 type KeycloakSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// WorkspaceID : A workspace reference ID for this instance
-	WorkspaceID string `json:"workspaceID"`
+	// StorageSize : Size of the Keycloak PVC
+	StorageSize string `json:"storageSize"`
 }
 
 // KeycloakStatus defines the observed state of Keycloak

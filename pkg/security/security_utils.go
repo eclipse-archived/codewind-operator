@@ -51,7 +51,7 @@ const (
 
 const (
 	textBadPassword    = "Passwords must not contains quoted characters"
-	textUserNotFound   = "Registered User not found"
+	textUserNotFound   = "Registered User not found in realm"
 	textUnableToParse  = "Unable to parse Keycloak response"
 	textInvalidOptions = "Invalid or missing command line options"
 	textAuthIsDown     = "Authentication service unavailable"

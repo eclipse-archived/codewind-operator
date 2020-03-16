@@ -2,7 +2,7 @@
 apiVersion: codewind.eclipse.org/v1alpha1
 kind: Keycloak
 metadata:
-  name: codewind-keycloak
+  name: devex001
   namespace: codewind
 spec:
-  workspaceID: 42lk4j4
+  storageSize: 10Gi

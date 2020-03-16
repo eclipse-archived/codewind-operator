@@ -39,9 +39,6 @@ func AddCodewindToKeycloak(workspaceID string, authURL string, realmName string,
 		return "", errors.New("Keycloak did not start in a reasonable about of time")
 	}
 
-	log.Info("Configuring Keycloak...")
-	log.Info(keycloakConfig.AuthURL)
-
 	tokens, secErr := SecAuthenticate(http.DefaultClient, &keycloakConfig)
 	if secErr != nil {
 		return "", secErr.Err
@@ -90,14 +87,11 @@ func AddCodewindRealmToKeycloak(authURL string, realmName string, keycloakAdminU
 	keycloakConfig.KeycloakAdminUsername = keycloakAdminUser
 
 	// Wait for the Keycloak service to respond
-	log.Info("Waiting for Keycloak to start in order to add new Realm", "URL", keycloakConfig.AuthURL)
+	log.Info("AddRealm: Waiting for Keycloak to start", "realm", keycloakConfig.RealmName, "URL", keycloakConfig.AuthURL)
 	startErr := util.WaitForService(keycloakConfig.AuthURL, 200, 500)
 	if startErr != nil {
 		return errors.New("Keycloak did not start in a reasonable about of time")
 	}
-
-	log.Info("Configuring Keycloak...")
-	log.Info(keycloakConfig.AuthURL)
 
 	tokens, secErr := SecAuthenticate(http.DefaultClient, &keycloakConfig)
 	if secErr != nil {
@@ -115,14 +109,15 @@ func configureKeycloakRealm(httpClient util.HTTPClient, keycloakConfig *Keycloak
 	// Check if realm is already registered
 	realm, _ := SecRealmGet(httpClient, keycloakConfig, accessToken)
 	if realm != nil && realm.ID != "" {
-		log.Info("Updating existing Keycloak realm ", "name", realm.DisplayName)
+		log.Info("Skipping realm update", "name", realm.DisplayName, "auth", keycloakConfig.AuthURL)
 	} else {
 		// Create a new realm
-		log.Info("Creating new Keycloak realm")
+		log.Info("Creating new Keycloak realm", "name", keycloakConfig.RealmName, "auth", keycloakConfig.AuthURL)
 		secErr := SecRealmCreate(httpClient, keycloakConfig, accessToken)
 		if secErr != nil {
 			return secErr
 		}
+		log.Info("Successfully registered new Keycloak realm", "name", keycloakConfig.RealmName)
 	}
 	return nil
 }
@@ -168,7 +163,7 @@ func configureKeycloakUser(httpClient util.HTTPClient, keycloakConfig *KeycloakC
 	if secErr == nil && registeredUser != nil {
 		return nil
 	}
-	log.Error(secErr.Err, "Configuring user failed", secErr.Desc)
+	log.Error(secErr.Err, "Configuring user failed", "reason", secErr.Desc)
 	return secErr
 }
 
