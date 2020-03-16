@@ -5,4 +5,4 @@ metadata:
   name: devex001
   namespace: codewind
 spec:
-  storageSize: 10Gi
+  storageSize: 1Gi
