@@ -104,19 +104,15 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 	pred := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			fmt.Println("UPDATE")
 			return true
 		},
 		CreateFunc: func(e event.CreateEvent) bool {
-			fmt.Println("CREATE")
 			return true
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
-			fmt.Println("DELETE")
 			return true
 		},
 		GenericFunc: func(e event.GenericEvent) bool {
-			fmt.Println("GENERIC")
 			return true
 		},
 	}
