@@ -8,6 +8,7 @@ import (
 type KeycloakSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// StorageSize : Size of the Keycloak PVC
+	// +kubebuilder:validation:Pattern=[0-9]*Gi$
 	StorageSize string `json:"storageSize"`
 }
 

@@ -334,14 +334,14 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	clientKey := ""
 
 	// Update Keycloak for user if needed
-	if codewind.Status.KeycloadStatus == "" {
-		codewind.Status.KeycloadStatus = defaults.ConstKeycloakConfigStarted
+	if codewind.Status.KeycloakStatus == "" {
+		codewind.Status.KeycloakStatus = defaults.ConstKeycloakConfigStarted
 		clientKey, err = security.AddCodewindToKeycloak(codewind.Spec.WorkspaceID, keycloakAuthURL, keycloakRealm, keycloakAdminUser, keycloakAdminPass, gatekeeperPublicURL, codewind.Spec.Username, keycloakClientID)
 		if err != nil {
 			reqLogger.Error(err, "Failed to update Keycloak for deployment.", "Namespace", codewind.Namespace, "ClientID", keycloakClientID)
 			return reconcile.Result{}, err
 		}
-		codewind.Status.KeycloadStatus = defaults.ConstKeycloakConfigReady
+		codewind.Status.KeycloakStatus = defaults.ConstKeycloakConfigReady
 	}
 
 	// Check if the Codewind PFE Deployment already exists, if not create a new one

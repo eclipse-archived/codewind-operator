@@ -8,13 +8,20 @@ import (
 type CodewindSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// WorkspaceID: ident of this deployment
+	// +kubebuilder:validation:Pattern=^[A-Za-z0-9/-]*$
 	WorkspaceID string `json:"workspaceID"`
 	// KeycloakDeployment : name of the keycloak deployment used by this instance of codewind
+	// +kubebuilder:validation:Pattern=^[A-Za-z0-9/-]*$
 	KeycloakDeployment string `json:"keycloakDeployment"`
+
 	// Developer username assigned to this instance
+	// +kubebuilder:validation:Pattern=^[A-Za-z0-9/-]*$
 	Username string `json:"username"`
+
 	// Codewind Storage size
+	// +kubebuilder:validation:Pattern=[0-9]*Gi$
 	StorageSize string `json:"storageSize"`
+
 	// LogLevel within pods
 	LogLevel string `json:"logLevel"`
 }
@@ -27,7 +34,7 @@ type CodewindStatus struct {
 	// Exposed Ingress of Codewind (Gatekeeper)
 	AccessURL string `json:"accessURL"`
 	// Keycloak Configuration status
-	KeycloadStatus string `json:"keycloadStatus"`
+	KeycloakStatus string `json:"keycloakStatus"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -39,7 +46,7 @@ type CodewindStatus struct {
 // +kubebuilder:printcolumn:name="Namespace",type="string",JSONPath=".metadata.namespace",priority=0,description="Deployment namespace"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",priority=0,description="Age of the resource"
 // +kubebuilder:printcolumn:name="Keycloak",type="string",JSONPath=".spec.keycloakDeployment",priority=0,description="Deployment reference name"
-// +kubebuilder:printcolumn:name="AuthStatus",type="string",JSONPath=".status.keycloadStatus",priority=0,description="Keycloak configuration status"
+// +kubebuilder:printcolumn:name="AuthStatus",type="string",JSONPath=".status.keycloakStatus",priority=0,description="Keycloak configuration status"
 // +kubebuilder:printcolumn:name="AccessURL",type="string",JSONPath=".status.accessURL",priority=0,description="Exposed route"
 type Codewind struct {
 	metav1.TypeMeta   `json:",inline"`
