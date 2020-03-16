@@ -213,7 +213,7 @@ func (r *ReconcileCodewind) deploymentForCodewindPFE(codewind *codewindv1alpha1.
 							},
 							{
 								Name:  "SERVICE_ACCOUNT_NAME",
-								Value: codewind.Spec.WorkspaceID,
+								Value: "codewind-" + codewind.Spec.WorkspaceID,
 							},
 							{
 								Name:  "HOST_WORKSPACE_DIRECTORY",

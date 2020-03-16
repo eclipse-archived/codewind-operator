@@ -328,7 +328,8 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	}
 
 	keycloakRealm := defaultRealm
-	keycloakAuthURL := "https://" + defaults.PrefixCodewindKeycloak + "-" + codewind.Spec.KeycloakDeployment + "." + ingressDomain
+	keycloakAuthHostName := defaults.PrefixCodewindKeycloak + "-" + codewind.Spec.KeycloakDeployment + "." + ingressDomain
+	keycloakAuthURL := "https://" + keycloakAuthHostName
 	keycloakClientID := "codewind-" + codewind.Spec.WorkspaceID
 	gatekeeperPublicURL := "https://" + defaults.PrefixCodewindGatekeeper + "-" + codewind.Spec.WorkspaceID + "." + ingressDomain
 	clientKey := ""
@@ -349,7 +350,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.PrefixCodewindPFE + "-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, deployment)
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Deployment
-		dep := r.deploymentForCodewindPFE(codewind, isOpenshift, keycloakRealm, keycloakAuthURL, codewind.Spec.LogLevel, ingressDomain)
+		dep := r.deploymentForCodewindPFE(codewind, isOpenshift, keycloakRealm, keycloakAuthHostName, codewind.Spec.LogLevel, ingressDomain)
 		reqLogger.Info("The workspace ID of this is:", "WorkspaceID", codewind.Spec.WorkspaceID)
 		reqLogger.Info("Creating a new PFE Deployment.", "Namespace", dep.Namespace, "Name", dep.Name)
 		err = r.client.Create(context.TODO(), dep)
