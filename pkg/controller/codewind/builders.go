@@ -209,7 +209,7 @@ func (r *ReconcileCodewind) deploymentForCodewindPFE(codewind *codewindv1alpha1.
 							},
 							{
 								Name:  "SERVICE_NAME",
-								Value: "codewind-" + codewind.Spec.WorkspaceID,
+								Value: defaults.PrefixCodewindPFE + "-" + codewind.Spec.WorkspaceID,
 							},
 							{
 								Name:  "SERVICE_ACCOUNT_NAME",
