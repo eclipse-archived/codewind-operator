@@ -2,11 +2,11 @@
 apiVersion: codewind.eclipse.org/v1alpha1
 kind: Codewind
 metadata:
-  name: codewind-k81235kj
+  name: codewind-jane1
   namespace: codewind
 spec:
-  workspaceID: k81235kj
   keycloakDeployment: devex001
-  logLevel: info
   username: jane
+  workspaceID: jane1
+  logLevel: info
   storageSize: 10Gi

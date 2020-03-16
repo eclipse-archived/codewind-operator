@@ -165,13 +165,13 @@ An example of valid yaml is :
 apiVersion: codewind.eclipse.org/v1alpha1
 kind: Codewind
 metadata:
-  name: codewind-k81235kj
+  name: codewind-jane1
   namespace: codewind
 spec:
-  workspaceID: k81235kj
   keycloakDeployment: devex001
-  logLevel: info
   username: jane
+  workspaceID: jane1
+  logLevel: info
   storageSize: 10Gi
 ```
 
@@ -187,3 +187,11 @@ codewind-k81235kj   jane       codewind    10s   devex001   Completed    https:/
 
 This command lists all the running Codewind deployments and the username of the developer it has been assigned. The keycloak service name and auth config status is shown along with the Acces URL that needs to be added to the IDE when creating a connection.
 
+Note: 
+
+If during account creation a temporary password the user will need to log into Codewind from a browser first.  
+
+1.  Open the gatekeeper URL for the codewind deployment
+2.  Log in using the provided username and initial password
+3.  follow the prompts to change the password
+4.  proceed with setting up the IDE connection using the newly changed password
