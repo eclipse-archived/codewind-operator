@@ -128,6 +128,7 @@ func (r *ReconcileCodewind) deploymentForCodewindPerformance(codewind *codewindv
 func (r *ReconcileCodewind) deploymentForCodewindPFE(codewind *codewindv1alpha1.Codewind, isOnOpenshift bool, keycloakRealm string, authHost string, logLevel string, ingressDomain string) *appsv1.Deployment {
 	ls := labelsForCodewindPFE(codewind)
 	replicas := int32(1)
+	runAsPrivileged := true
 	loglevel := "info"
 	if codewind.Spec.LogLevel != "" {
 		loglevel = codewind.Spec.LogLevel
@@ -177,7 +178,10 @@ func (r *ReconcileCodewind) deploymentForCodewindPFE(codewind *codewindv1alpha1.
 						Name:            defaults.PrefixCodewindPFE,
 						Image:           defaults.CodewindImage + ":" + defaults.CodewindImageTag,
 						ImagePullPolicy: corev1.PullAlways,
-						VolumeMounts:    volumeMounts,
+						SecurityContext: &corev1.SecurityContext{
+							Privileged: &runAsPrivileged,
+						},
+						VolumeMounts: volumeMounts,
 						Env: []corev1.EnvVar{
 							{
 								Name:  "TEKTON_PIPELINE",
