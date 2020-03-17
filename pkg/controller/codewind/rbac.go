@@ -16,6 +16,8 @@ import (
 	defaults "github.com/eclipse/codewind-operator/pkg/controller/defaults"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 // clusterRolesForCodewind : takes in a Codewind object and returns Cluster roles for that object.
@@ -129,7 +131,7 @@ func (r *ReconcileCodewind) clusterRolesForCodewindTekton(codewind *codewindv1al
 //roleBindingForCodewind : create Codewind role bindings in the deployment namespace
 func (r *ReconcileCodewind) roleBindingForCodewind(codewind *codewindv1alpha1.Codewind) *rbacv1.RoleBinding {
 	labels := labelsForCodewindPFE(codewind)
-	return &rbacv1.RoleBinding{
+	rolebinding := &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1beta1",
 			Kind:       "RoleBinding",
@@ -152,12 +154,15 @@ func (r *ReconcileCodewind) roleBindingForCodewind(codewind *codewindv1alpha1.Co
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}
+	// Set Codewind instance as the owner of these role bindings.
+	controllerutil.SetControllerReference(codewind, rolebinding, r.scheme)
+	return rolebinding
 }
 
 //roleBindingForCodewindTekton : create Codewind Tekton cluster role bindings
 func (r *ReconcileCodewind) roleBindingForCodewindTekton(codewind *codewindv1alpha1.Codewind) *rbacv1.ClusterRoleBinding {
 	labels := labelsForCodewindPFE(codewind)
-	return &rbacv1.ClusterRoleBinding{
+	rolebinding := &rbacv1.ClusterRoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1beta1",
 			Kind:       "ClusterRoleBinding",
@@ -180,4 +185,7 @@ func (r *ReconcileCodewind) roleBindingForCodewindTekton(codewind *codewindv1alp
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}
+	// Set Codewind instance as the owner of these role bindings.
+	controllerutil.SetControllerReference(codewind, rolebinding, r.scheme)
+	return rolebinding
 }
