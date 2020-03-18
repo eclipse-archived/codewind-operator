@@ -25,7 +25,7 @@ import (
 	"github.com/eclipse/codewind-operator/pkg/security"
 	util "github.com/eclipse/codewind-operator/pkg/util"
 	"github.com/go-logr/logr"
-	v1 "github.com/openshift/api/route/v1"
+	routev1 "github.com/openshift/api/route/v1"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -500,13 +500,13 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	if isOpenshift {
 		// Check if the Codewind Gatekeeper Route already exists, if not create a new one
-		routeGatekeeper := &v1.Route{}
+		routeGatekeeper := &routev1.Route{}
 		err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindGatekeeperIngressName, Namespace: codewind.Namespace}, routeGatekeeper)
 		if err != nil && k8serr.IsNotFound(err) {
 			newRoute := r.routeForCodewindGatekeeper(codewind, deploymentOptions, codewindConfigMap.IngressDomain)
-			reqLogger.Info("Creating a new Codewind gatekeeper ingress", "Namespace", newRoute.Namespace, "Name", newRoute.Name)
+			reqLogger.Info("Creating a new Codewind gatekeeper route", "Namespace", newRoute.Namespace, "Name", newRoute.Name)
 			err = r.client.Create(context.TODO(), newRoute)
-			if err != nil {
+			if err != nil && !k8serr.IsAlreadyExists(err) {
 				reqLogger.Error(err, "Failed to create new Codewind gatekeeper route.", "Namespace", newRoute.Namespace, "Name", newRoute.Name)
 				return reconcile.Result{}, err
 			}
@@ -528,7 +528,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 			newIngress := r.ingressForCodewindGatekeeper(codewind, deploymentOptions, codewindConfigMap.IngressDomain)
 			reqLogger.Info("Creating a new Codewind gatekeeper ingress", "Namespace", newIngress.Namespace, "Name", newIngress.Name)
 			err = r.client.Create(context.TODO(), newIngress)
-			if err != nil {
+			if err != nil && !k8serr.IsAlreadyExists(err) {
 				reqLogger.Error(err, "Failed to create new Codewind gatekeeper ingress.", "Namespace", newIngress.Namespace, "Name", newIngress.Name)
 				return reconcile.Result{}, err
 			}

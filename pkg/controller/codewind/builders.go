@@ -17,7 +17,7 @@ import (
 	codewindv1alpha1 "github.com/eclipse/codewind-operator/pkg/apis/codewind/v1alpha1"
 	defaults "github.com/eclipse/codewind-operator/pkg/controller/defaults"
 	"github.com/eclipse/codewind-operator/pkg/util"
-	v1 "github.com/openshift/api/route/v1"
+	routev1 "github.com/openshift/api/route/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -447,10 +447,10 @@ func (r *ReconcileCodewind) deploymentForCodewindGatekeeper(codewind *codewindv1
 }
 
 // ingressForCodewindGatekeeper function takes in a Codewind object and returns an Openshift Route for the gatekeeper
-func (r *ReconcileCodewind) routeForCodewindGatekeeper(codewind *codewindv1alpha1.Codewind, deploymentOptions DeploymentOptionsCodewind, ingressDomain string) *v1.Route {
+func (r *ReconcileCodewind) routeForCodewindGatekeeper(codewind *codewindv1alpha1.Codewind, deploymentOptions DeploymentOptionsCodewind, ingressDomain string) *routev1.Route {
 	ls := labelsForCodewindGatekeeper(deploymentOptions)
 	weight := int32(100)
-	route := &v1.Route{
+	route := &routev1.Route{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Route",
 			APIVersion: "route.openshift.io/v1",
@@ -460,16 +460,16 @@ func (r *ReconcileCodewind) routeForCodewindGatekeeper(codewind *codewindv1alpha
 			Namespace: codewind.Namespace,
 			Labels:    ls,
 		},
-		Spec: v1.RouteSpec{
+		Spec: routev1.RouteSpec{
 			Host: deploymentOptions.CodewindGatekeeperIngressHost,
-			Port: &v1.RoutePort{
+			Port: &routev1.RoutePort{
 				TargetPort: intstr.FromInt(defaults.GatekeeperContainerPort),
 			},
-			TLS: &v1.TLSConfig{
-				InsecureEdgeTerminationPolicy: v1.InsecureEdgeTerminationPolicyRedirect,
-				Termination:                   v1.TLSTerminationPassthrough,
+			TLS: &routev1.TLSConfig{
+				InsecureEdgeTerminationPolicy: routev1.InsecureEdgeTerminationPolicyRedirect,
+				Termination:                   routev1.TLSTerminationPassthrough,
 			},
-			To: v1.RouteTargetReference{
+			To: routev1.RouteTargetReference{
 				Kind:   "Service",
 				Name:   deploymentOptions.CodewindGatekeeperServiceName,
 				Weight: &weight,
