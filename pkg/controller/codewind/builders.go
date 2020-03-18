@@ -476,7 +476,7 @@ func (r *ReconcileCodewind) routeForCodewindGatekeeper(codewind *codewindv1alpha
 			},
 		},
 	}
-	// Set Codewind instance as the owner of the Service.
+	// Set Codewind instance as the owner of the route.
 	controllerutil.SetControllerReference(codewind, route, r.scheme)
 	return route
 }
@@ -530,7 +530,7 @@ func (r *ReconcileCodewind) ingressForCodewindGatekeeper(codewind *codewindv1alp
 			},
 		},
 	}
-	// Set Codewind instance as the owner of the Service.
+	// Set Codewind instance as the owner of the ingress.
 	controllerutil.SetControllerReference(codewind, ingress, r.scheme)
 	return ingress
 }

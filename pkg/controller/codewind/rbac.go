@@ -24,6 +24,12 @@ import (
 func (r *ReconcileCodewind) clusterRolesForCodewind(codewind *codewindv1alpha1.Codewind, deploymentOptions DeploymentOptionsCodewind) *rbacv1.ClusterRole {
 	ourRoles := []rbacv1.PolicyRule{
 		rbacv1.PolicyRule{
+			APIGroups:     []string{"security.openshift.io"},
+			Resources:     []string{"securitycontextconstraints"},
+			Verbs:         []string{"use"},
+			ResourceNames: []string{"privileged"},
+		},
+		rbacv1.PolicyRule{
 			APIGroups: []string{"extensions", ""},
 			Resources: []string{"ingresses", "ingresses/status", "podsecuritypolicies"},
 			Verbs:     []string{"delete", "create", "patch", "get", "list", "update", "watch", "use"},
@@ -137,7 +143,7 @@ func (r *ReconcileCodewind) roleBindingForCodewind(codewind *codewindv1alpha1.Co
 			Kind:       "RoleBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaults.CodewindRoleBindingNamePrefix + "-" + deploymentOptions.WorkspaceID,
+			Name:      deploymentOptions.CodewindRoleBindingName,
 			Labels:    labels,
 			Namespace: codewind.Namespace,
 		},
@@ -150,7 +156,7 @@ func (r *ReconcileCodewind) roleBindingForCodewind(codewind *codewindv1alpha1.Co
 		},
 		RoleRef: rbacv1.RoleRef{
 			Kind:     "ClusterRole",
-			Name:     deploymentOptions.CodewindRoleBindingName,
+			Name:     deploymentOptions.CodewindRolesName,
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}
