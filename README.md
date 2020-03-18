@@ -129,7 +129,7 @@ IMPORTANT: Once logged in,  change the admin password by clicking the `Admin` li
 
 # Registering Codewind users :
 
-Ensure that the Realm is set to "Codewind" by clicking on the drop down arrow in the top right of the page. Select Codewind if necessary. Then: 
+Ensure that the Realm is set to "Codewind" by clicking on the drop down arrow in the top right of the page. Select Codewind if necessary. Then:
 
 * Click: Users
 * Click: Add user
@@ -140,7 +140,7 @@ Ensure that the Realm is set to "Codewind" by clicking on the drop down arrow in
 
 Assign an initial password to the user account by clicking 'Credentials' and then add their initial password.
 
-The field Temporary = On will require Jane to change her password during first connection.  Setting Temporary = Off will make this password valid for continuous use and will not require changing on first connect. 
+The field Temporary = On will require Jane to change her password during first connection.  Setting Temporary = Off will make this password valid for continuous use and will not require changing on first connect.
 
 Click:  Set Password to save changes
 Log out of the keycloak admin page
@@ -148,7 +148,7 @@ Log out of the keycloak admin page
 
 ## Deploy a Codewind instance
 
-Deploying a new Codewind instance will involve applying a piece of YAML. 
+Deploying a new Codewind instance will involve applying a piece of YAML.
 
 A copy of this yaml is available : 
 
@@ -157,7 +157,6 @@ A copy of this yaml is available :
 To deploy Codewind change the following fields :
 
 - name: a unique name for this deployment
-- workspaceID:  a short name for this deployment
 - keycloakDeployment: the keycloak service used for authentication
 - username: a username already registered in the specified keycloak service
 
@@ -167,17 +166,16 @@ An example of valid yaml is :
 apiVersion: codewind.eclipse.org/v1alpha1
 kind: Codewind
 metadata:
-  name: codewind-jane1
+  name: jane1
   namespace: codewind
 spec:
   keycloakDeployment: devex001
   username: jane
-  workspaceID: jane1
   logLevel: info
   storageSize: 10Gi
 ```
 
-Things to note : 
+Things to note :
 
 * the `name` field is the name of the deployment and must be unique within the cluster.
 * the `keycloakDeployment` field is the name of the keycloak instance that will provide authentication services.  It must have already been provisioned and running.
@@ -194,7 +192,7 @@ codewind.codewind.eclipse.org/codewind-k81235kj created
 
 $ kubectl get codewinds
 NAME                USERNAME   NAMESPACE   AGE   KEYCLOAK   AUTHSTATUS   ACCESSURL
-codewind-jane1      jane       codewind    23m   devex001   Completed    https://codewind-gatekeeper-jane1.10.98.117.7.nip.io
+jane1               jane       codewind    23m   devex001   Completed    https://codewind-gatekeeper-jane1.10.98.117.7.nip.io
 ```
 
 The `kubectl get codewinds` command lists all the running Codewind deployments and the username of the developer it has been assigned. The Keycloak service name and auth config status is also displyed along with the Access URL that needs to be added to the IDE when creating a connection.

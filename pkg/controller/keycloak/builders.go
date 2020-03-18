@@ -1,3 +1,14 @@
+/*******************************************************************************
+ * Copyright (c) 2020 IBM Corporation and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v2.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v20.html
+ *
+ * Contributors:
+ *     IBM Corporation - initial API and implementation
+ *******************************************************************************/
+
 package keycloak
 
 import (
@@ -14,7 +25,7 @@ import (
 )
 
 // serviceAccountForKeycloak function takes in a Keycloak object and returns a serviceAccount for that object.
-func (r *ReconcileKeycloak) serviceAccountForKeycloak(keycloak *codewindv1alpha1.Keycloak) *corev1.ServiceAccount {
+func (r *ReconcileKeycloak) serviceAccountForKeycloak(keycloak *codewindv1alpha1.Keycloak, deploymentOptions DeploymentOptionsKeycloak) *corev1.ServiceAccount {
 	ls := labelsForKeycloak(keycloak)
 
 	serviceAccount := &corev1.ServiceAccount{
@@ -23,7 +34,7 @@ func (r *ReconcileKeycloak) serviceAccountForKeycloak(keycloak *codewindv1alpha1
 			Kind:       "ServiceAccount",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
+			Name:      deploymentOptions.KeycloakServiceAccountName,
 			Namespace: keycloak.Namespace,
 			Labels:    ls,
 		},
@@ -36,7 +47,7 @@ func (r *ReconcileKeycloak) serviceAccountForKeycloak(keycloak *codewindv1alpha1
 }
 
 // pvcForKeycloak function takes in a Keycloak object and returns a PVC for that object.
-func (r *ReconcileKeycloak) pvcForKeycloak(keycloak *codewindv1alpha1.Keycloak, storageClassName string, storageKeycloakSize string) *corev1.PersistentVolumeClaim {
+func (r *ReconcileKeycloak) pvcForKeycloak(keycloak *codewindv1alpha1.Keycloak, deploymentOptions DeploymentOptionsKeycloak, storageClassName string, storageKeycloakSize string) *corev1.PersistentVolumeClaim {
 	ls := labelsForKeycloak(keycloak)
 
 	pvc := &corev1.PersistentVolumeClaim{
@@ -45,7 +56,7 @@ func (r *ReconcileKeycloak) pvcForKeycloak(keycloak *codewindv1alpha1.Keycloak, 
 			Kind:       "PersistentVolumeClaim",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaults.PrefixCodewindKeycloak + "-pvc-" + keycloak.Name,
+			Name:      deploymentOptions.KeycloakPVCName,
 			Namespace: keycloak.Namespace,
 			Labels:    ls,
 		},
@@ -72,7 +83,7 @@ func (r *ReconcileKeycloak) pvcForKeycloak(keycloak *codewindv1alpha1.Keycloak, 
 }
 
 // secretsForKeycloak function takes in a Keycloak object and returns a Secret for that object.
-func (r *ReconcileKeycloak) secretsForKeycloak(keycloak *codewindv1alpha1.Keycloak) *corev1.Secret {
+func (r *ReconcileKeycloak) secretsForKeycloak(keycloak *codewindv1alpha1.Keycloak, deploymentOptions DeploymentOptionsKeycloak) *corev1.Secret {
 	ls := labelsForKeycloak(keycloak)
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -80,7 +91,7 @@ func (r *ReconcileKeycloak) secretsForKeycloak(keycloak *codewindv1alpha1.Keyclo
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret-keycloak-user-" + keycloak.Name,
+			Name:      deploymentOptions.KeycloakSecretsName,
 			Namespace: keycloak.Namespace,
 			Labels:    ls,
 		},
@@ -118,13 +129,13 @@ func (r *ReconcileKeycloak) serviceForKeycloak(keycloak *codewindv1alpha1.Keyclo
 }
 
 // deploymentForKeycloak returns a Keycloak object
-func (r *ReconcileKeycloak) deploymentForKeycloak(keycloak *codewindv1alpha1.Keycloak) *appsv1.Deployment {
+func (r *ReconcileKeycloak) deploymentForKeycloak(keycloak *codewindv1alpha1.Keycloak, deploymentOptions DeploymentOptionsKeycloak) *appsv1.Deployment {
 	ls := labelsForKeycloak(keycloak)
 	replicas := int32(1)
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
+			Name:      deploymentOptions.KeycloakDeploymentName,
 			Namespace: keycloak.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -137,13 +148,13 @@ func (r *ReconcileKeycloak) deploymentForKeycloak(keycloak *codewindv1alpha1.Key
 					Labels: ls,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
+					ServiceAccountName: deploymentOptions.KeycloakServiceAccountName,
 					Volumes: []corev1.Volume{
 						{
 							Name: "keycloak-data",
 							VolumeSource: corev1.VolumeSource{
 								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: defaults.PrefixCodewindKeycloak + "-pvc-" + keycloak.Name,
+									ClaimName: deploymentOptions.KeycloakPVCName,
 								},
 							},
 						},
@@ -192,7 +203,7 @@ func (r *ReconcileKeycloak) deploymentForKeycloak(keycloak *codewindv1alpha1.Key
 }
 
 // serviceForKeycloak function takes in a Keycloak object and returns a Service for that object.
-func (r *ReconcileKeycloak) routeForKeycloak(keycloak *codewindv1alpha1.Keycloak, ingressDomain string) *v1.Route {
+func (r *ReconcileKeycloak) routeForKeycloak(keycloak *codewindv1alpha1.Keycloak, deploymentOptions DeploymentOptionsKeycloak, ingressDomain string) *v1.Route {
 	ls := labelsForKeycloak(keycloak)
 	weight := int32(100)
 	annotations := map[string]string{
@@ -207,7 +218,7 @@ func (r *ReconcileKeycloak) routeForKeycloak(keycloak *codewindv1alpha1.Keycloak
 			Kind:       "Route",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
+			Name:        deploymentOptions.KeycloakIngressName,
 			Namespace:   keycloak.Namespace,
 			Annotations: annotations,
 			Labels:      ls,
@@ -223,7 +234,7 @@ func (r *ReconcileKeycloak) routeForKeycloak(keycloak *codewindv1alpha1.Keycloak
 			},
 			To: v1.RouteTargetReference{
 				Kind:   "Service",
-				Name:   defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
+				Name:   deploymentOptions.KeycloakServiceName,
 				Weight: &weight,
 			},
 		},
@@ -235,7 +246,7 @@ func (r *ReconcileKeycloak) routeForKeycloak(keycloak *codewindv1alpha1.Keycloak
 }
 
 // serviceForKeycloak function takes in a Keycloak object and returns a Service for that object.
-func (r *ReconcileKeycloak) ingressForKeycloak(keycloak *codewindv1alpha1.Keycloak, ingressDomain string) *extv1beta1.Ingress {
+func (r *ReconcileKeycloak) ingressForKeycloak(keycloak *codewindv1alpha1.Keycloak, deploymentOptions DeploymentOptionsKeycloak, ingressDomain string) *extv1beta1.Ingress {
 	ls := labelsForKeycloak(keycloak)
 	annotations := map[string]string{
 		"nginx.ingress.kubernetes.io/rewrite-target":     "/",
@@ -249,7 +260,7 @@ func (r *ReconcileKeycloak) ingressForKeycloak(keycloak *codewindv1alpha1.Keyclo
 			Kind:       "Ingress",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
+			Name:        deploymentOptions.KeycloakIngressName,
 			Namespace:   keycloak.Namespace,
 			Annotations: annotations,
 			Labels:      ls,
@@ -270,7 +281,7 @@ func (r *ReconcileKeycloak) ingressForKeycloak(keycloak *codewindv1alpha1.Keyclo
 								{
 									Path: "/",
 									Backend: extv1beta1.IngressBackend{
-										ServiceName: defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
+										ServiceName: deploymentOptions.KeycloakServiceName,
 										ServicePort: intstr.FromInt(defaults.KeycloakContainerPort),
 									},
 								},

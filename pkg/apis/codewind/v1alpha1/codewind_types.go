@@ -1,3 +1,14 @@
+/*******************************************************************************
+ * Copyright (c) 2020 IBM Corporation and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v2.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v20.html
+ *
+ * Contributors:
+ *     IBM Corporation - initial API and implementation
+ *******************************************************************************/
+
 package v1alpha1
 
 import (
@@ -7,9 +18,7 @@ import (
 // CodewindSpec defines the desired state of Codewind
 type CodewindSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// WorkspaceID: ident of this deployment
-	// +kubebuilder:validation:Pattern=^[A-Za-z0-9/-]*$
-	WorkspaceID string `json:"workspaceID"`
+
 	// KeycloakDeployment : name of the keycloak deployment used by this instance of codewind
 	// +kubebuilder:validation:Pattern=^[A-Za-z0-9/-]*$
 	KeycloakDeployment string `json:"keycloakDeployment"`
@@ -31,8 +40,10 @@ type CodewindStatus struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Keycloak access URL
 	AuthURL string `json:"authURL"`
+
 	// Exposed Ingress of Codewind (Gatekeeper)
 	AccessURL string `json:"accessURL"`
+
 	// Keycloak Configuration status
 	KeycloakStatus string `json:"keycloakStatus"`
 }
@@ -46,7 +57,7 @@ type CodewindStatus struct {
 // +kubebuilder:printcolumn:name="Namespace",type="string",JSONPath=".metadata.namespace",priority=0,description="Deployment namespace"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",priority=0,description="Age of the resource"
 // +kubebuilder:printcolumn:name="Keycloak",type="string",JSONPath=".spec.keycloakDeployment",priority=0,description="Deployment reference name"
-// +kubebuilder:printcolumn:name="AuthStatus",type="string",JSONPath=".status.keycloakStatus",priority=0,description="Keycloak configuration status"
+// +kubebuilder:printcolumn:name="Registration",type="string",JSONPath=".status.keycloakStatus",priority=0,description="Keycloak configuration status"
 // +kubebuilder:printcolumn:name="AccessURL",type="string",JSONPath=".status.accessURL",priority=0,description="Exposed route"
 type Codewind struct {
 	metav1.TypeMeta   `json:",inline"`

@@ -22,7 +22,7 @@ spec:
     type: string
   - JSONPath: .status.keycloakStatus
     description: Keycloak configuration status
-    name: AuthStatus
+    name: Registration
     type: string
   - JSONPath: .status.accessURL
     description: Exposed route
@@ -72,17 +72,11 @@ spec:
               description: Developer username assigned to this instance
               pattern: ^[A-Za-z0-9/-]*$
               type: string
-            workspaceID:
-              description: 'Important: Run "operator-sdk generate k8s" to regenerate
-                code after modifying this file WorkspaceID: ident of this deployment'
-              pattern: ^[A-Za-z0-9/-]*$
-              type: string
           required:
           - keycloakDeployment
           - logLevel
           - storageSize
           - username
-          - workspaceID
           type: object
         status:
           description: CodewindStatus defines the observed state of Codewind

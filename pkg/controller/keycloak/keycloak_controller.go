@@ -1,3 +1,14 @@
+/*******************************************************************************
+ * Copyright (c) 2020 IBM Corporation and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v2.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v20.html
+ *
+ * Contributors:
+ *     IBM Corporation - initial API and implementation
+ *******************************************************************************/
+
 package keycloak
 
 import (
@@ -32,6 +43,25 @@ import (
 
 var log = logf.Log.WithName("controller_keycloak")
 
+// DeploymentOptionsKeycloak : Configuration settings of a Keycloak deployment
+type DeploymentOptionsKeycloak struct {
+	KeycloakServiceAccountName string
+	KeycloakPVCName            string
+	KeycloakSecretsName        string
+	KeycloakDeploymentName     string
+	KeycloakServiceName        string
+	KeycloakIngressName        string
+	KeycloakIngressHost        string
+	KeycloakAccessURL          string
+}
+
+// OperatorConfigMapCodewind : Configuration fields saved in the config map
+type OperatorConfigMapCodewind struct {
+	IngressDomain string
+	StorageSize   string
+	DefaultRealm  string
+}
+
 // Add : creates a new Keycloak Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
@@ -52,12 +82,12 @@ func createOperatorConfigMap(reconciler *ReconcileKeycloak, operatorNamespace st
 	configMap := &corev1.ConfigMap{}
 	configMap.Namespace = operatorNamespace
 	configMap.Name = defaults.OperatorConfigMapName
-	fData, err := ioutil.ReadFile(defaults.ConfigMapLocation)
+	fileData, err := ioutil.ReadFile(defaults.ConfigMapLocation)
 	if err != nil {
 		log.Error(err, "Failed to read config map defaults", "Location", defaults.ConfigMapLocation)
 		os.Exit(1)
 	}
-	err = yaml.Unmarshal(fData, configMap)
+	err = yaml.Unmarshal(fileData, configMap)
 	if err != nil {
 		log.Error(err, "Failed to parse defaults config map from file", "Location", defaults.ConfigMapLocation)
 		os.Exit(1)
@@ -176,17 +206,31 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 		reqLogger.Error(err, "Unable to read config map. Ensure one has been created in the same namespace as the operator", "name", defaults.OperatorConfigMapName)
 		return reconcile.Result{}, err
 	}
-
 	// Get fields we need from the configmap
-	ingressDomain := operatorConfigMap.Data["ingressDomain"]
-	storageKeycloakSize := operatorConfigMap.Data["storageKeycloakSize"]
+
+	configMapCodewind := OperatorConfigMapCodewind{
+		IngressDomain: operatorConfigMap.Data["ingressDomain"],
+		StorageSize:   operatorConfigMap.Data["storageCodewindSize"],
+		DefaultRealm:  operatorConfigMap.Data["defaultRealm"],
+	}
+
+	deploymentOptions := DeploymentOptionsKeycloak{
+		KeycloakServiceAccountName: defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
+		KeycloakPVCName:            defaults.PrefixCodewindKeycloak + "-pvc-" + keycloak.Name,
+		KeycloakSecretsName:        "secret-keycloak-user-" + keycloak.Name,
+		KeycloakDeploymentName:     defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
+		KeycloakServiceName:        defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
+		KeycloakIngressName:        defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
+		KeycloakIngressHost:        defaults.PrefixCodewindKeycloak + "-" + keycloak.Name + "." + configMapCodewind.IngressDomain,
+		KeycloakAccessURL:          "https://" + defaults.PrefixCodewindKeycloak + "-" + keycloak.Name + "." + configMapCodewind.IngressDomain,
+	}
 
 	// Check if the Keycloak Service account already exist, if not create a new one
 	serviceAccount := &corev1.ServiceAccount{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.PrefixCodewindKeycloak + "-" + keycloak.Name, Namespace: keycloak.Namespace}, serviceAccount)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.KeycloakServiceAccountName, Namespace: keycloak.Namespace}, serviceAccount)
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new serviceAccount object
-		newServiceAccount := r.serviceAccountForKeycloak(keycloak)
+		newServiceAccount := r.serviceAccountForKeycloak(keycloak, deploymentOptions)
 		reqLogger.Info("Creating a new service account", "Namespace", newServiceAccount.Namespace, "Name", newServiceAccount.Name)
 		err = r.client.Create(context.TODO(), newServiceAccount)
 		if err != nil {
@@ -200,10 +244,10 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// Check if the Keycloak Secrets already exist, if not create new ones
 	secretUser := &corev1.Secret{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "secret-keycloak-user-" + keycloak.Name, Namespace: keycloak.Namespace}, secretUser)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.KeycloakSecretsName, Namespace: keycloak.Namespace}, secretUser)
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Secrets object
-		secretUser = r.secretsForKeycloak(keycloak)
+		secretUser = r.secretsForKeycloak(keycloak, deploymentOptions)
 		reqLogger.Info("Creating a new Secret", "Namespace", secretUser.Namespace, "Name", secretUser.Name)
 		err = r.client.Create(context.TODO(), secretUser)
 		if err != nil {
@@ -217,10 +261,10 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// Check if the Keycloak PVC already exist, if not create a new one
 	keycloakPVC := &corev1.PersistentVolumeClaim{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.PrefixCodewindKeycloak + "-pvc-" + keycloak.Name, Namespace: keycloak.Namespace}, keycloakPVC)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.KeycloakPVCName, Namespace: keycloak.Namespace}, keycloakPVC)
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new PVC object
-		newKeycloakPVC := r.pvcForKeycloak(keycloak, storageClassName, storageKeycloakSize)
+		newKeycloakPVC := r.pvcForKeycloak(keycloak, deploymentOptions, storageClassName, configMapCodewind.StorageSize)
 		reqLogger.Info("Creating a new PVC", "Namespace", newKeycloakPVC.Namespace, "Name", newKeycloakPVC.Name)
 		err = r.client.Create(context.TODO(), newKeycloakPVC)
 		if err != nil {
@@ -234,10 +278,10 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// Check if the Keycloak Deployment already exists, if not create a new one
 	deployment := &appsv1.Deployment{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.PrefixCodewindKeycloak + "-" + keycloak.Name, Namespace: keycloak.Namespace}, deployment)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.KeycloakDeploymentName, Namespace: keycloak.Namespace}, deployment)
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Deployment
-		dep := r.deploymentForKeycloak(keycloak)
+		dep := r.deploymentForKeycloak(keycloak, deploymentOptions)
 		reqLogger.Info("Creating a new Deployment.", "Namespace", dep.Namespace, "Name", dep.Name)
 		err = r.client.Create(context.TODO(), dep)
 		if err != nil {
@@ -254,7 +298,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// Check if the Keycloak Service already exists, if not create a new one
 	service := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.PrefixCodewindKeycloak + "-" + keycloak.Name, Namespace: keycloak.Namespace}, service)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.KeycloakServiceName, Namespace: keycloak.Namespace}, service)
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Service object
 		ser := r.serviceForKeycloak(keycloak)
@@ -270,12 +314,12 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 	}
 
 	if isOpenshift {
-		// Check if the Keycloak Ingress already exists, if not create a new one
+		// Check if the Keycloak Route already exists, if not create a new one
 		route := &v1.Route{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.PrefixCodewindKeycloak + "-" + keycloak.Name, Namespace: keycloak.Namespace}, route)
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.KeycloakIngressName, Namespace: keycloak.Namespace}, route)
 		if err != nil && k8serr.IsNotFound(err) {
 			// Define a new Route object
-			openshiftRoute := r.routeForKeycloak(keycloak, ingressDomain)
+			openshiftRoute := r.routeForKeycloak(keycloak, deploymentOptions, configMapCodewind.IngressDomain)
 			reqLogger.Info("Creating a new route", "Namespace", openshiftRoute.Namespace, "Name", openshiftRoute.Name)
 			err = r.client.Create(context.TODO(), openshiftRoute)
 			if err != nil {
@@ -283,7 +327,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 				return reconcile.Result{}, err
 			}
 			// Update the accessURL
-			keycloak.Status.AccessURL = "https://" + defaults.PrefixCodewindKeycloak + "-" + keycloak.Name + "." + ingressDomain
+			keycloak.Status.AccessURL = deploymentOptions.KeycloakAccessURL
 		} else if err != nil {
 			reqLogger.Error(err, "Failed to get Keycloak route")
 			return reconcile.Result{}, err
@@ -291,10 +335,10 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 	} else {
 		// Check if the Keycloak Ingress already exists, if not create a new one
 		ingress := &extv1beta1.Ingress{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.PrefixCodewindKeycloak + "-" + keycloak.Name, Namespace: keycloak.Namespace}, ingress)
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.KeycloakIngressName, Namespace: keycloak.Namespace}, ingress)
 		if err != nil && k8serr.IsNotFound(err) {
 			// Define a new Ingress object
-			ing := r.ingressForKeycloak(keycloak, ingressDomain)
+			ing := r.ingressForKeycloak(keycloak, deploymentOptions, configMapCodewind.IngressDomain)
 			reqLogger.Info("Creating a new Ingress", "Namespace", ing.Namespace, "Name", ing.Name)
 			err = r.client.Create(context.TODO(), ing)
 			if err != nil {
@@ -302,7 +346,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 				return reconcile.Result{}, err
 			}
 			// Update the accessURL
-			keycloak.Status.AccessURL = "https://" + defaults.PrefixCodewindKeycloak + "-" + keycloak.Name + "." + ingressDomain
+			keycloak.Status.AccessURL = deploymentOptions.KeycloakAccessURL
 		} else if err != nil {
 			reqLogger.Error(err, "Failed to get Keycloak Ingress")
 			return reconcile.Result{}, err
@@ -316,10 +360,10 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 		reqLogger.Info("Keycloak Pod status", "phase", keycloakPod.Status.Phase)
 		if keycloakPod.Status.Phase == "Running" {
 			reqLogger.Info("Keycloak Pod", "instance", keycloak.Name, "Phase", keycloakPod.Status.Phase)
-			defaultRealm := operatorConfigMap.Data["defaultRealm"]
+			defaultRealm := configMapCodewind.DefaultRealm
 			if keycloak.Status.DefaultRealm != defaultRealm {
 				keycloak.Status.DefaultRealm = defaultRealm
-				err = security.AddCodewindRealmToKeycloak("https://"+defaults.PrefixCodewindKeycloak+"-"+keycloak.Name+"."+ingressDomain, defaultRealm, string(secretUser.Data["keycloak-admin-user"]), string(secretUser.Data["keycloak-admin-password"]))
+				err = security.AddCodewindRealmToKeycloak(deploymentOptions.KeycloakAccessURL, defaultRealm, string(secretUser.Data["keycloak-admin-user"]), string(secretUser.Data["keycloak-admin-password"]))
 				if err != nil {
 					reqLogger.Error(err, "Failed configuring keycloak with codewind default realm", "Namespace", keycloak.Namespace, "realm", defaultRealm)
 					return reconcile.Result{}, err

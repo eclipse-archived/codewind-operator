@@ -1,3 +1,14 @@
+/*******************************************************************************
+ * Copyright (c) 2020 IBM Corporation and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v2.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v20.html
+ *
+ * Contributors:
+ *     IBM Corporation - initial API and implementation
+ *******************************************************************************/
+
 package codewind
 
 import (
@@ -35,6 +46,37 @@ import (
 
 var log = logf.Log.WithName("controller_codewind")
 
+// DeploymentOptionsCodewind : Configuration settings of a Codewind deployment
+type DeploymentOptionsCodewind struct {
+	TektonRoleBindingName               string
+	WorkspaceID                         string
+	CodewindRolesName                   string
+	CodewindRoleBindingName             string
+	CodewindTektonClusterRolesName      string
+	CodewindTektonRoleBindingName       string
+	CodewindPFEPVCName                  string
+	CodewindServiceAccountName          string
+	CodewindPFEDeploymentName           string
+	CodewindPFEServiceName              string
+	CodewindPerformanceDeploymentName   string
+	CodewindPerformanceServiceName      string
+	CodewindGatekeeperServiceName       string
+	CodewindGatekeeperSecretSessionName string
+	CodewindGatekeeperSecretTLSName     string
+	CodewindGatekeeperSecretAuthName    string
+	CodewindGatekeeperTLSCertTitle      string
+	CodewindGatekeeperDeploymentName    string
+	CodewindGatekeeperIngressName       string
+	CodewindGatekeeperIngressHost       string
+}
+
+// OperatorConfigMapCodewind : Configuration fields saved in the config map
+type OperatorConfigMapCodewind struct {
+	IngressDomain string
+	StorageSize   string
+	DefaultRealm  string
+}
+
 // Add creates a new Codewind Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
@@ -57,12 +99,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Disable certificate validation checking
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	// isOpenshift, _, err := util.DetectOpenShift()
-	// if err != nil {
-	// 	log.Error(err, "Error detecting platfom", "")
-	// }
-	// log.Info("Running on Openshift", "status", isOpenshift)
-
 	// Create a new controller
 	c, err := controller.New("codewind-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
@@ -83,69 +119,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	if err != nil {
 		return err
 	}
-
-	// // Secret
-	// if err = c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForOwner{
-	// 	IsController: true,
-	// 	OwnerType:    &codewindv1alpha1.Codewind{},
-	// }); err != nil {
-	// 	return err
-	// }
-
-	// // service
-	// if err = c.Watch(&source.Kind{Type: &corev1.Service{}}, &handler.EnqueueRequestForOwner{
-	// 	IsController: true,
-	// 	OwnerType:    &codewindv1alpha1.Codewind{},
-	// }); err != nil {
-	// 	return err
-	// }
-
-	// // service account
-	// err = c.Watch(&source.Kind{Type: &corev1.ServiceAccount{}}, &handler.EnqueueRequestForOwner{
-	// 	IsController: true,
-	// 	OwnerType:    &codewindv1alpha1.Codewind{},
-	// })
-	// if err != nil {
-	// 	return err
-	// }
-
-	// // deployment
-	// err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
-	// 	IsController: true,
-	// 	OwnerType:    &codewindv1alpha1.Codewind{},
-	// })
-	// if err != nil {
-	// 	return err
-	// }
-
-	// // persistent volume claim
-	// err = c.Watch(&source.Kind{Type: &corev1.PersistentVolumeClaim{}}, &handler.EnqueueRequestForOwner{
-	// 	IsController: true,
-	// 	OwnerType:    &codewindv1alpha1.Codewind{},
-	// })
-	// if err != nil {
-	// 	return err
-	// }
-
-	// // Routes
-	// if isOpenshift {
-	// 	err = c.Watch(&source.Kind{Type: &v1.Route{}}, &handler.EnqueueRequestForOwner{
-	// 		IsController: true,
-	// 		OwnerType:    &codewindv1alpha1.Codewind{},
-	// 	})
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// } else {
-	// 	// Ingress
-	// 	err = c.Watch(&source.Kind{Type: &extv1beta1.Ingress{}}, &handler.EnqueueRequestForOwner{
-	// 		IsController: true,
-	// 		OwnerType:    &codewindv1alpha1.Codewind{},
-	// 	})
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
 
 	return nil
 }
@@ -181,10 +154,11 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
-	// Get fields we need from the configmap
-	ingressDomain := operatorConfigMap.Data["ingressDomain"]
-	storageSize := operatorConfigMap.Data["storageCodewindSize"]
-	defaultRealm := operatorConfigMap.Data["defaultRealm"]
+	codewindConfigMap := OperatorConfigMapCodewind{
+		IngressDomain: operatorConfigMap.Data["ingressDomain"],
+		StorageSize:   operatorConfigMap.Data["storageCodewindSize"],
+		DefaultRealm:  operatorConfigMap.Data["defaultRealm"],
+	}
 
 	// get the operator config map
 	configMap := &corev1.ConfigMap{}
@@ -216,12 +190,35 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
+	workspaceID := codewind.Name
+	deploymentOptions := DeploymentOptionsCodewind{
+		WorkspaceID:                         workspaceID,
+		CodewindRolesName:                   defaults.CodewindRolesName,
+		CodewindServiceAccountName:          "codewind-" + workspaceID,
+		TektonRoleBindingName:               defaults.CodewindTektonClusterRoleBindingName + "-" + workspaceID,
+		CodewindRoleBindingName:             defaults.CodewindRoleBindingNamePrefix + "-" + workspaceID,
+		CodewindTektonClusterRolesName:      defaults.CodewindTektonClusterRolesName,
+		CodewindTektonRoleBindingName:       defaults.CodewindTektonClusterRoleBindingName + "-" + workspaceID,
+		CodewindPFEPVCName:                  defaults.PrefixCodewindPFE + "-pvc-" + workspaceID,
+		CodewindPFEDeploymentName:           defaults.PrefixCodewindPFE + "-" + workspaceID,
+		CodewindPFEServiceName:              defaults.PrefixCodewindPFE + "-" + workspaceID,
+		CodewindPerformanceDeploymentName:   defaults.PrefixCodewindPerformance + "-" + workspaceID,
+		CodewindPerformanceServiceName:      defaults.PrefixCodewindPerformance + "-" + workspaceID,
+		CodewindGatekeeperDeploymentName:    defaults.PrefixCodewindGatekeeper + "-" + workspaceID,
+		CodewindGatekeeperIngressName:       defaults.PrefixCodewindGatekeeper + "-" + workspaceID,
+		CodewindGatekeeperIngressHost:       defaults.PrefixCodewindGatekeeper + "-" + workspaceID + "." + codewindConfigMap.IngressDomain,
+		CodewindGatekeeperSecretSessionName: "secret-codewind-session-" + workspaceID,
+		CodewindGatekeeperSecretTLSName:     "secret-codewind-tls-" + workspaceID,
+		CodewindGatekeeperTLSCertTitle:      "Codewind" + "-" + workspaceID,
+		CodewindGatekeeperSecretAuthName:    "secret-codewind-client-" + workspaceID,
+		CodewindGatekeeperServiceName:       defaults.PrefixCodewindGatekeeper + "-" + workspaceID,
+	}
+
 	// Check if the Codewind Cluster roles already exist, if not create new ones
 	clusterRoles := &rbacv1.ClusterRole{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.CodewindRolesName, Namespace: ""}, clusterRoles)
-
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindRolesName, Namespace: ""}, clusterRoles)
 	if err != nil && k8serr.IsNotFound(err) {
-		newClusterRoles := r.clusterRolesForCodewind(codewind)
+		newClusterRoles := r.clusterRolesForCodewind(codewind, deploymentOptions)
 		reqLogger.Info("Creating a new Codewind cluster roles", "Namespace", "", "Name", newClusterRoles.Name)
 		err = r.client.Create(context.TODO(), newClusterRoles)
 		if err != nil {
@@ -235,9 +232,9 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// Check if the Codewind instance Role Bindings already exist, if not create new ones
 	roleBinding := &rbacv1.RoleBinding{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.CodewindRoleBindingNamePrefix + "-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, roleBinding)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindRoleBindingName, Namespace: codewind.Namespace}, roleBinding)
 	if err != nil && k8serr.IsNotFound(err) {
-		newRoleBinding := r.roleBindingForCodewind(codewind)
+		newRoleBinding := r.roleBindingForCodewind(codewind, deploymentOptions)
 		reqLogger.Info("Creating a new Codewind role binding", "Namespace", newRoleBinding.Namespace, "Name", newRoleBinding.Name)
 		err = r.client.Create(context.TODO(), newRoleBinding)
 		if err != nil {
@@ -251,9 +248,9 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// Check if the Tekton Cluster roles already exist, if not create new ones
 	clusterRolesTekton := &rbacv1.ClusterRole{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.CodewindTektonClusterRolesName, Namespace: ""}, clusterRolesTekton)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindTektonClusterRolesName, Namespace: ""}, clusterRolesTekton)
 	if err != nil && k8serr.IsNotFound(err) {
-		newClusterRoles := r.clusterRolesForCodewindTekton(codewind)
+		newClusterRoles := r.clusterRolesForCodewindTekton(codewind, deploymentOptions)
 		reqLogger.Info("Creating a new Codewind Tekton cluster roles", "Namespace", "", "Name", newClusterRoles.Name)
 		err = r.client.Create(context.TODO(), newClusterRoles)
 		if err != nil {
@@ -267,9 +264,9 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// Check if the Codewind Tekton Cluster Role Bindings already exist, if not create new ones
 	roleBindingTekton := &rbacv1.ClusterRoleBinding{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.CodewindTektonClusterRoleBindingName + "-" + codewind.Spec.WorkspaceID, Namespace: ""}, roleBindingTekton)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindTektonRoleBindingName, Namespace: ""}, roleBindingTekton)
 	if err != nil && k8serr.IsNotFound(err) {
-		newTektonRoleBinding := r.roleBindingForCodewindTekton(codewind)
+		newTektonRoleBinding := r.roleBindingForCodewindTekton(codewind, deploymentOptions)
 		reqLogger.Info("Creating a new Codewind Tekton ClusterRoleBinding", "Namespace", newTektonRoleBinding.Namespace, "Name", newTektonRoleBinding.Name)
 		err = r.client.Create(context.TODO(), newTektonRoleBinding)
 		if err != nil {
@@ -283,9 +280,9 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// Check if the Codewind Service account already exist, if not create new ones
 	serviceAccount := &corev1.ServiceAccount{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "codewind-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, serviceAccount)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindServiceAccountName, Namespace: codewind.Namespace}, serviceAccount)
 	if err != nil && k8serr.IsNotFound(err) {
-		newServiceAccount := r.serviceAccountForCodewind(codewind)
+		newServiceAccount := r.serviceAccountForCodewind(codewind, deploymentOptions)
 		reqLogger.Info("Creating a new Codewind service account", "Namespace", newServiceAccount.Namespace, "Name", newServiceAccount.Name)
 		err = r.client.Create(context.TODO(), newServiceAccount)
 		if err != nil {
@@ -299,9 +296,9 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// Check if the Codewind PVC already exist, if not create a new one
 	codewindPVC := &corev1.PersistentVolumeClaim{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.PrefixCodewindPFE + "-pvc-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, codewindPVC)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindPFEPVCName, Namespace: codewind.Namespace}, codewindPVC)
 	if err != nil && k8serr.IsNotFound(err) {
-		newCodewindPVC := r.pvcForCodewind(codewind, storageClassName, storageSize)
+		newCodewindPVC := r.pvcForCodewind(codewind, deploymentOptions, storageClassName, codewindConfigMap.StorageSize)
 		reqLogger.Info("Creating a new Codewind PFE PVC", "Namespace", newCodewindPVC.Namespace, "Name", newCodewindPVC.Name)
 		err = r.client.Create(context.TODO(), newCodewindPVC)
 		if err != nil {
@@ -327,17 +324,17 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{RequeueAfter: time.Second * 10}, err
 	}
 
-	keycloakRealm := defaultRealm
-	keycloakAuthHostName := defaults.PrefixCodewindKeycloak + "-" + codewind.Spec.KeycloakDeployment + "." + ingressDomain
+	keycloakRealm := codewindConfigMap.DefaultRealm
+	keycloakAuthHostName := defaults.PrefixCodewindKeycloak + "-" + codewind.Spec.KeycloakDeployment + "." + codewindConfigMap.IngressDomain
 	keycloakAuthURL := "https://" + keycloakAuthHostName
-	keycloakClientID := "codewind-" + codewind.Spec.WorkspaceID
-	gatekeeperPublicURL := "https://" + defaults.PrefixCodewindGatekeeper + "-" + codewind.Spec.WorkspaceID + "." + ingressDomain
+	keycloakClientID := "codewind-" + deploymentOptions.WorkspaceID
+	gatekeeperPublicURL := "https://" + defaults.PrefixCodewindGatekeeper + "-" + deploymentOptions.WorkspaceID + "." + codewindConfigMap.IngressDomain
 	clientKey := ""
 
 	// Update Keycloak for user if needed
 	if codewind.Status.KeycloakStatus == "" {
 		codewind.Status.KeycloakStatus = defaults.ConstKeycloakConfigStarted
-		clientKey, err = security.AddCodewindToKeycloak(codewind.Spec.WorkspaceID, keycloakAuthURL, keycloakRealm, keycloakAdminUser, keycloakAdminPass, gatekeeperPublicURL, codewind.Spec.Username, keycloakClientID)
+		clientKey, err = security.AddCodewindToKeycloak(deploymentOptions.WorkspaceID, keycloakAuthURL, keycloakRealm, keycloakAdminUser, keycloakAdminPass, gatekeeperPublicURL, codewind.Spec.Username, keycloakClientID)
 		if err != nil {
 			reqLogger.Error(err, "Failed to update Keycloak for deployment.", "Namespace", codewind.Namespace, "ClientID", keycloakClientID)
 			return reconcile.Result{}, err
@@ -347,11 +344,11 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// Check if the Codewind PFE Deployment already exists, if not create a new one
 	deployment := &appsv1.Deployment{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.PrefixCodewindPFE + "-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, deployment)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindPFEDeploymentName, Namespace: codewind.Namespace}, deployment)
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Deployment
-		dep := r.deploymentForCodewindPFE(codewind, isOpenshift, keycloakRealm, keycloakAuthHostName, codewind.Spec.LogLevel, ingressDomain)
-		reqLogger.Info("The workspace ID of this is:", "WorkspaceID", codewind.Spec.WorkspaceID)
+		dep := r.deploymentForCodewindPFE(codewind, deploymentOptions, isOpenshift, keycloakRealm, keycloakAuthHostName, codewind.Spec.LogLevel, codewindConfigMap.IngressDomain)
+		reqLogger.Info("The workspace ID of this is:", "WorkspaceID", deploymentOptions.WorkspaceID)
 		reqLogger.Info("Creating a new PFE Deployment.", "Namespace", dep.Namespace, "Name", dep.Name)
 		err = r.client.Create(context.TODO(), dep)
 		if err != nil {
@@ -367,9 +364,9 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// Check if the Codewind PFE Service already exists, if not create a new one
 	service := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.PrefixCodewindPFE + "-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, service)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindPFEServiceName, Namespace: codewind.Namespace}, service)
 	if err != nil && k8serr.IsNotFound(err) {
-		newService := r.serviceForCodewindPFE(codewind)
+		newService := r.serviceForCodewindPFE(codewind, deploymentOptions)
 		reqLogger.Info("Creating a new Service", "Namespace", newService.Namespace, "Name", newService.Name)
 		err = r.client.Create(context.TODO(), newService)
 		if err != nil {
@@ -381,16 +378,16 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
-	// Check if the Codewind PFE Deployment already exists, if not create a new one
+	// Check if the Codewind Performance Deployment already exists, if not create a new one
 	deploymentPerformance := &appsv1.Deployment{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.PrefixCodewindPerformance + "-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, deploymentPerformance)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindPerformanceDeploymentName, Namespace: codewind.Namespace}, deploymentPerformance)
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Performance Deployment
-		newDeployment := r.deploymentForCodewindPerformance(codewind, ingressDomain)
-		reqLogger.Info("Creating a new Performance deployment.", "Namespace", codewind.Namespace, "Name", defaults.PrefixCodewindPerformance+"-"+codewind.Spec.WorkspaceID)
+		newDeployment := r.deploymentForCodewindPerformance(codewind, deploymentOptions, codewindConfigMap.IngressDomain)
+		reqLogger.Info("Creating a new Performance deployment.", "Namespace", codewind.Namespace, "Name", newDeployment.Name)
 		err = r.client.Create(context.TODO(), newDeployment)
 		if err != nil {
-			reqLogger.Error(err, "Failed to create new Performance deployment.", "Namespace", codewind.Namespace, "Name", defaults.PrefixCodewindPerformance+"-"+codewind.Spec.WorkspaceID)
+			reqLogger.Error(err, "Failed to create new Performance deployment.", "Namespace", codewind.Namespace, "Name", newDeployment.Name)
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{Requeue: true}, nil
@@ -401,13 +398,13 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// Check if the Codewind Performance Service already exists, if not create a new one
 	servicePerformance := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.PrefixCodewindPerformance + "-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, servicePerformance)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindPerformanceServiceName, Namespace: codewind.Namespace}, servicePerformance)
 	if err != nil && k8serr.IsNotFound(err) {
-		newService := r.serviceForCodewindPerformance(codewind)
-		reqLogger.Info("Creating a new Codewind performance service", "Namespace", newService.Namespace, "Name", defaults.PrefixCodewindPerformance+"-"+codewind.Spec.WorkspaceID)
+		newService := r.serviceForCodewindPerformance(codewind, deploymentOptions)
+		reqLogger.Info("Creating a new Codewind performance service", "Namespace", newService.Namespace, "Name", newService.Name)
 		err = r.client.Create(context.TODO(), newService)
 		if err != nil {
-			reqLogger.Error(err, "Failed to create new Service.", "Namespace", newService.Namespace, "Name", defaults.PrefixCodewindPerformance+"-"+codewind.Spec.WorkspaceID)
+			reqLogger.Error(err, "Failed to create new Service.", "Namespace", newService.Namespace, "Name", newService.Name)
 			return reconcile.Result{}, err
 		}
 	} else if err != nil {
@@ -417,11 +414,11 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// Check if the Codewind Gatekeeper session secrets already exist, if not create new ones
 	secret := &corev1.Secret{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "secret-codewind-session-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, secret)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindGatekeeperSecretSessionName, Namespace: codewind.Namespace}, secret)
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Secrets object
 		session := strings.ToUpper(strconv.FormatInt(util.CreateTimestamp(), 36))
-		newSecret := r.buildGatekeeperSecretSession(codewind, session)
+		newSecret := r.buildGatekeeperSecretSession(codewind, deploymentOptions, session)
 		reqLogger.Info("Creating a new Secret", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
 		err = r.client.Create(context.TODO(), newSecret)
 		if err != nil {
@@ -435,10 +432,10 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// Check if the Codewind Gatekeeper TLS secrets already exist, if not create new ones
 	secret = &corev1.Secret{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "secret-codewind-tls-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, secret)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindGatekeeperSecretTLSName, Namespace: codewind.Namespace}, secret)
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Secrets object
-		newSecret := r.buildGatekeeperSecretTLS(codewind, ingressDomain)
+		newSecret := r.buildGatekeeperSecretTLS(codewind, deploymentOptions, codewindConfigMap.IngressDomain)
 		reqLogger.Info("Creating a new Secret", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
 		err = r.client.Create(context.TODO(), newSecret)
 		if err != nil {
@@ -452,10 +449,10 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// Check if the Codewind Gatekeeper Auth secrets already exist, if not create new ones
 	secret = &corev1.Secret{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "secret-codewind-client-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, secret)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindGatekeeperSecretAuthName, Namespace: codewind.Namespace}, secret)
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Secrets object
-		newSecret := r.buildGatekeeperSecretAuth(codewind, clientKey)
+		newSecret := r.buildGatekeeperSecretAuth(codewind, deploymentOptions, clientKey)
 		reqLogger.Info("Creating a new Gatekeeper Auth Secret", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
 		err = r.client.Create(context.TODO(), newSecret)
 		if err != nil {
@@ -467,16 +464,16 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
-	// Check if the Codewind PFE Deployment already exists, if not create a new one
+	// Check if the Codewind Gatekeeper Deployment already exists, if not create a new one
 	deploymentGatekeeper := &appsv1.Deployment{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.PrefixCodewindGatekeeper + "-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, deploymentGatekeeper)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindGatekeeperDeploymentName, Namespace: codewind.Namespace}, deploymentGatekeeper)
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Gatekeeper Deployment
-		newDeployment := r.deploymentForCodewindGatekeeper(codewind, isOpenshift, keycloakRealm, keycloakClientID, keycloakAuthURL, ingressDomain)
-		reqLogger.Info("Creating a new Gatekeeper deployment.", "Namespace", codewind.Namespace, "Name", defaults.PrefixCodewindGatekeeper+"-"+codewind.Spec.WorkspaceID)
+		newDeployment := r.deploymentForCodewindGatekeeper(codewind, deploymentOptions, isOpenshift, keycloakRealm, keycloakClientID, keycloakAuthURL, codewindConfigMap.IngressDomain)
+		reqLogger.Info("Creating a new Gatekeeper deployment.", "Namespace", codewind.Namespace, "Name", newDeployment.Name)
 		err = r.client.Create(context.TODO(), newDeployment)
 		if err != nil {
-			reqLogger.Error(err, "Failed to create new Gatekeeper deployment.", "Namespace", codewind.Namespace, "Name", defaults.PrefixCodewindGatekeeper+"-"+codewind.Spec.WorkspaceID)
+			reqLogger.Error(err, "Failed to create new Gatekeeper deployment.", "Namespace", codewind.Namespace, "Name", newDeployment.Name)
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{Requeue: true}, nil
@@ -485,11 +482,11 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
-	// Check if the Codewind PFE Service already exists, if not create a new one
+	// Check if the Codewind Gatekeeper Service already exists, if not create a new one
 	serviceGatekeeper := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.PrefixCodewindGatekeeper + "-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, serviceGatekeeper)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.PrefixCodewindGatekeeper + "-" + deploymentOptions.WorkspaceID, Namespace: codewind.Namespace}, serviceGatekeeper)
 	if err != nil && k8serr.IsNotFound(err) {
-		newService := r.serviceForCodewindGatekeeper(codewind)
+		newService := r.serviceForCodewindGatekeeper(codewind, deploymentOptions)
 		reqLogger.Info("Creating a new Codewind gatekeeper Service", "Namespace", newService.Namespace, "Name", newService.Name)
 		err = r.client.Create(context.TODO(), newService)
 		if err != nil {
@@ -504,9 +501,9 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	if isOpenshift {
 		// Check if the Codewind Gatekeeper Route already exists, if not create a new one
 		routeGatekeeper := &v1.Route{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.PrefixCodewindGatekeeper + "-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, routeGatekeeper)
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindGatekeeperIngressName, Namespace: codewind.Namespace}, routeGatekeeper)
 		if err != nil && k8serr.IsNotFound(err) {
-			newRoute := r.routeForCodewindGatekeeper(codewind, ingressDomain)
+			newRoute := r.routeForCodewindGatekeeper(codewind, deploymentOptions, codewindConfigMap.IngressDomain)
 			reqLogger.Info("Creating a new Codewind gatekeeper ingress", "Namespace", newRoute.Namespace, "Name", newRoute.Name)
 			err = r.client.Create(context.TODO(), newRoute)
 			if err != nil {
@@ -526,9 +523,9 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	} else {
 		// Check if the Codewind Gatekeeper Ingress already exists, if not create a new one
 		ingressGatekeeper := &extv1beta1.Ingress{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: defaults.PrefixCodewindGatekeeper + "-" + codewind.Spec.WorkspaceID, Namespace: codewind.Namespace}, ingressGatekeeper)
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindGatekeeperIngressName, Namespace: codewind.Namespace}, ingressGatekeeper)
 		if err != nil && k8serr.IsNotFound(err) {
-			newIngress := r.ingressForCodewindGatekeeper(codewind, ingressDomain)
+			newIngress := r.ingressForCodewindGatekeeper(codewind, deploymentOptions, codewindConfigMap.IngressDomain)
 			reqLogger.Info("Creating a new Codewind gatekeeper ingress", "Namespace", newIngress.Namespace, "Name", newIngress.Name)
 			err = r.client.Create(context.TODO(), newIngress)
 			if err != nil {

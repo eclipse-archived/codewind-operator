@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019 IBM Corporation and others.
+ * Copyright (c) 2020 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
@@ -21,7 +21,7 @@ import (
 )
 
 // clusterRolesForCodewind : takes in a Codewind object and returns Cluster roles for that object.
-func (r *ReconcileCodewind) clusterRolesForCodewind(codewind *codewindv1alpha1.Codewind) *rbacv1.ClusterRole {
+func (r *ReconcileCodewind) clusterRolesForCodewind(codewind *codewindv1alpha1.Codewind, deploymentOptions DeploymentOptionsCodewind) *rbacv1.ClusterRole {
 	ourRoles := []rbacv1.PolicyRule{
 		rbacv1.PolicyRule{
 			APIGroups: []string{"extensions", ""},
@@ -101,14 +101,14 @@ func (r *ReconcileCodewind) clusterRolesForCodewind(codewind *codewindv1alpha1.C
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: codewind.Namespace,
-			Name:      defaults.CodewindRolesName,
+			Name:      deploymentOptions.CodewindRolesName,
 		},
 		Rules: ourRoles,
 	}
 }
 
 // clusterRolesForCodewindTekton : create Codewind Tekton cluster roles
-func (r *ReconcileCodewind) clusterRolesForCodewindTekton(codewind *codewindv1alpha1.Codewind) *rbacv1.ClusterRole {
+func (r *ReconcileCodewind) clusterRolesForCodewindTekton(codewind *codewindv1alpha1.Codewind, deploymentOptions DeploymentOptionsCodewind) *rbacv1.ClusterRole {
 	ourRoles := []rbacv1.PolicyRule{
 		rbacv1.PolicyRule{
 			APIGroups: []string{""},
@@ -122,35 +122,35 @@ func (r *ReconcileCodewind) clusterRolesForCodewindTekton(codewind *codewindv1al
 			Kind:       "ClusterRole",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: defaults.CodewindTektonClusterRolesName,
+			Name: deploymentOptions.CodewindTektonClusterRolesName,
 		},
 		Rules: ourRoles,
 	}
 }
 
 //roleBindingForCodewind : create Codewind role bindings in the deployment namespace
-func (r *ReconcileCodewind) roleBindingForCodewind(codewind *codewindv1alpha1.Codewind) *rbacv1.RoleBinding {
-	labels := labelsForCodewindPFE(codewind)
+func (r *ReconcileCodewind) roleBindingForCodewind(codewind *codewindv1alpha1.Codewind, deploymentOptions DeploymentOptionsCodewind) *rbacv1.RoleBinding {
+	labels := labelsForCodewindPFE(deploymentOptions)
 	rolebinding := &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1beta1",
 			Kind:       "RoleBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaults.CodewindRoleBindingNamePrefix + "-" + codewind.Spec.WorkspaceID,
+			Name:      defaults.CodewindRoleBindingNamePrefix + "-" + deploymentOptions.WorkspaceID,
 			Labels:    labels,
 			Namespace: codewind.Namespace,
 		},
 		Subjects: []rbacv1.Subject{
 			rbacv1.Subject{
 				Kind:      "ServiceAccount",
-				Name:      "codewind-" + codewind.Spec.WorkspaceID,
+				Name:      "codewind-" + deploymentOptions.WorkspaceID,
 				Namespace: codewind.Namespace,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			Kind:     "ClusterRole",
-			Name:     defaults.CodewindRolesName,
+			Name:     deploymentOptions.CodewindRoleBindingName,
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}
@@ -160,22 +160,22 @@ func (r *ReconcileCodewind) roleBindingForCodewind(codewind *codewindv1alpha1.Co
 }
 
 //roleBindingForCodewindTekton : create Codewind Tekton cluster role bindings
-func (r *ReconcileCodewind) roleBindingForCodewindTekton(codewind *codewindv1alpha1.Codewind) *rbacv1.ClusterRoleBinding {
-	labels := labelsForCodewindPFE(codewind)
+func (r *ReconcileCodewind) roleBindingForCodewindTekton(codewind *codewindv1alpha1.Codewind, deploymentOptions DeploymentOptionsCodewind) *rbacv1.ClusterRoleBinding {
+	labels := labelsForCodewindPFE(deploymentOptions)
 	rolebinding := &rbacv1.ClusterRoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1beta1",
 			Kind:       "ClusterRoleBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaults.CodewindTektonClusterRoleBindingName + "-" + codewind.Spec.WorkspaceID,
+			Name:      deploymentOptions.CodewindTektonRoleBindingName,
 			Labels:    labels,
 			Namespace: codewind.Namespace,
 		},
 		Subjects: []rbacv1.Subject{
 			rbacv1.Subject{
 				Kind:      "ServiceAccount",
-				Name:      "codewind-" + codewind.Spec.WorkspaceID,
+				Name:      "codewind-" + deploymentOptions.WorkspaceID,
 				Namespace: codewind.Namespace,
 			},
 		},
