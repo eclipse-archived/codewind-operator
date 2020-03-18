@@ -14,7 +14,7 @@ kind: ConfigMap
 metadata:
   name: codewind-operator
 data:
-  ingressDomain: 10.98.117.7.nip.io
+  ingressDomain: codewind.apps-crc.testing
   defaultRealm: codewind
   storageKeycloakSize: 1Gi
   storageCodewindSize: 10Gi
