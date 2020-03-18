@@ -21,7 +21,7 @@ import (
 	defaults "github.com/eclipse/codewind-operator/pkg/controller/defaults"
 	"github.com/eclipse/codewind-operator/pkg/security"
 	"github.com/eclipse/codewind-operator/pkg/util"
-	v1 "github.com/openshift/api/route/v1"
+	routev1 "github.com/openshift/api/route/v1"
 	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -315,7 +315,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	if isOpenshift {
 		// Check if the Keycloak Route already exists, if not create a new one
-		route := &v1.Route{}
+		route := &routev1.Route{}
 		err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.KeycloakIngressName, Namespace: keycloak.Namespace}, route)
 		if err != nil && k8serr.IsNotFound(err) {
 			// Define a new Route object

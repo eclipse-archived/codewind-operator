@@ -14,7 +14,7 @@ package keycloak
 import (
 	codewindv1alpha1 "github.com/eclipse/codewind-operator/pkg/apis/codewind/v1alpha1"
 	defaults "github.com/eclipse/codewind-operator/pkg/controller/defaults"
-	v1 "github.com/openshift/api/route/v1"
+	routev1 "github.com/openshift/api/route/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -203,7 +203,7 @@ func (r *ReconcileKeycloak) deploymentForKeycloak(keycloak *codewindv1alpha1.Key
 }
 
 // serviceForKeycloak function takes in a Keycloak object and returns a Service for that object.
-func (r *ReconcileKeycloak) routeForKeycloak(keycloak *codewindv1alpha1.Keycloak, deploymentOptions DeploymentOptionsKeycloak, ingressDomain string) *v1.Route {
+func (r *ReconcileKeycloak) routeForKeycloak(keycloak *codewindv1alpha1.Keycloak, deploymentOptions DeploymentOptionsKeycloak, ingressDomain string) *routev1.Route {
 	ls := labelsForKeycloak(keycloak)
 	weight := int32(100)
 	annotations := map[string]string{
@@ -212,7 +212,7 @@ func (r *ReconcileKeycloak) routeForKeycloak(keycloak *codewindv1alpha1.Keycloak
 		"nginx.ingress.kubernetes.io/force-ssl-redirect": "true",
 		"kubernetes.io/ingress.class":                    "nginx",
 	}
-	route := &v1.Route{
+	route := &routev1.Route{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "route.openshift.io/v1",
 			Kind:       "Route",
@@ -223,16 +223,16 @@ func (r *ReconcileKeycloak) routeForKeycloak(keycloak *codewindv1alpha1.Keycloak
 			Annotations: annotations,
 			Labels:      ls,
 		},
-		Spec: v1.RouteSpec{
+		Spec: routev1.RouteSpec{
 			Host: defaults.PrefixCodewindKeycloak + "-" + keycloak.Name + "." + ingressDomain,
-			Port: &v1.RoutePort{
+			Port: &routev1.RoutePort{
 				TargetPort: intstr.FromInt(defaults.KeycloakContainerPort),
 			},
-			TLS: &v1.TLSConfig{
-				InsecureEdgeTerminationPolicy: v1.InsecureEdgeTerminationPolicyRedirect,
-				Termination:                   v1.TLSTerminationEdge,
+			TLS: &routev1.TLSConfig{
+				InsecureEdgeTerminationPolicy: routev1.InsecureEdgeTerminationPolicyRedirect,
+				Termination:                   routev1.TLSTerminationEdge,
 			},
-			To: v1.RouteTargetReference{
+			To: routev1.RouteTargetReference{
 				Kind:   "Service",
 				Name:   deploymentOptions.KeycloakServiceName,
 				Weight: &weight,
