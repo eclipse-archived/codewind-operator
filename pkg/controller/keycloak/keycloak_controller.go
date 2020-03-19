@@ -265,7 +265,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// Check if the Keycloak TLS Secrets already exist, if not create new ones
 	secretTLS := &corev1.Secret{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.KeycloakTLSSecretsName, Namespace: keycloak.Namespace}, secretUser)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.KeycloakTLSSecretsName, Namespace: keycloak.Namespace}, secretTLS)
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Secrets object
 		secretTLS = r.secretsTLSForKeycloak(keycloak, deploymentOptions)
@@ -384,6 +384,12 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 			defaultRealm := configMapCodewind.DefaultRealm
 			if keycloak.Status.DefaultRealm != defaultRealm {
 				keycloak.Status.DefaultRealm = defaultRealm
+				secretUser := &corev1.Secret{}
+				err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.KeycloakSecretsName, Namespace: keycloak.Namespace}, secretUser)
+				if err != nil {
+					reqLogger.Error(err, "Unable to find the Keycloak secret when adding realm", "Namespace", keycloak.Namespace, "name", deploymentOptions.KeycloakSecretsName)
+					return reconcile.Result{}, err
+				}
 				err = security.AddCodewindRealmToKeycloak(deploymentOptions.KeycloakAccessURL, defaultRealm, string(secretUser.Data["keycloak-admin-user"]), string(secretUser.Data["keycloak-admin-password"]))
 				if err != nil {
 					reqLogger.Error(err, "Failed configuring keycloak with codewind default realm", "Namespace", keycloak.Namespace, "realm", defaultRealm)
