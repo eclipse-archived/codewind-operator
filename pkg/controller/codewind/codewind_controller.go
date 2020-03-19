@@ -301,7 +301,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		newCodewindPVC := r.pvcForCodewind(codewind, deploymentOptions, storageClassName, codewindConfigMap.StorageSize)
 		reqLogger.Info("Creating a new Codewind PFE PVC", "Namespace", newCodewindPVC.Namespace, "Name", newCodewindPVC.Name)
 		err = r.client.Create(context.TODO(), newCodewindPVC)
-		if err != nil {
+		if err != nil && !k8serr.IsAlreadyExists(err) {
 			reqLogger.Error(err, "Failed to create new PFE PVC.", "Namespace", newCodewindPVC.Namespace, "Name", newCodewindPVC.Name)
 			return reconcile.Result{}, err
 		}
@@ -351,7 +351,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		reqLogger.Info("The workspace ID of this is:", "WorkspaceID", deploymentOptions.WorkspaceID)
 		reqLogger.Info("Creating a new PFE Deployment.", "Namespace", dep.Namespace, "Name", dep.Name)
 		err = r.client.Create(context.TODO(), dep)
-		if err != nil {
+		if err != nil && !k8serr.IsAlreadyExists(err) {
 			reqLogger.Error(err, "Failed to create new PFE deployment.", "Namespace", dep.Namespace, "Name", dep.Name)
 			return reconcile.Result{}, err
 		}
@@ -369,7 +369,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		newService := r.serviceForCodewindPFE(codewind, deploymentOptions)
 		reqLogger.Info("Creating a new Service", "Namespace", newService.Namespace, "Name", newService.Name)
 		err = r.client.Create(context.TODO(), newService)
-		if err != nil {
+		if err != nil && !k8serr.IsAlreadyExists(err) {
 			reqLogger.Error(err, "Failed to create new service.", "Namespace", newService.Namespace, "Name", newService.Name)
 			return reconcile.Result{}, err
 		}
@@ -386,7 +386,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		newDeployment := r.deploymentForCodewindPerformance(codewind, deploymentOptions, codewindConfigMap.IngressDomain)
 		reqLogger.Info("Creating a new Performance deployment.", "Namespace", codewind.Namespace, "Name", newDeployment.Name)
 		err = r.client.Create(context.TODO(), newDeployment)
-		if err != nil {
+		if err != nil && !k8serr.IsAlreadyExists(err) {
 			reqLogger.Error(err, "Failed to create new Performance deployment.", "Namespace", codewind.Namespace, "Name", newDeployment.Name)
 			return reconcile.Result{}, err
 		}
@@ -403,7 +403,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		newService := r.serviceForCodewindPerformance(codewind, deploymentOptions)
 		reqLogger.Info("Creating a new Codewind performance service", "Namespace", newService.Namespace, "Name", newService.Name)
 		err = r.client.Create(context.TODO(), newService)
-		if err != nil {
+		if err != nil && !k8serr.IsAlreadyExists(err) {
 			reqLogger.Error(err, "Failed to create new Service.", "Namespace", newService.Namespace, "Name", newService.Name)
 			return reconcile.Result{}, err
 		}
@@ -421,7 +421,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		newSecret := r.buildGatekeeperSecretSession(codewind, deploymentOptions, session)
 		reqLogger.Info("Creating a new Secret", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
 		err = r.client.Create(context.TODO(), newSecret)
-		if err != nil {
+		if err != nil && !k8serr.IsAlreadyExists(err) {
 			reqLogger.Error(err, "Failed to create new Gatekeeper session secret.", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
 			return reconcile.Result{}, err
 		}
@@ -438,7 +438,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		newSecret := r.buildGatekeeperSecretTLS(codewind, deploymentOptions, codewindConfigMap.IngressDomain)
 		reqLogger.Info("Creating a new Secret", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
 		err = r.client.Create(context.TODO(), newSecret)
-		if err != nil {
+		if err != nil && !k8serr.IsAlreadyExists(err) {
 			reqLogger.Error(err, "Failed to create new Gatekeeper TLS secret.", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
 			return reconcile.Result{}, err
 		}
@@ -455,7 +455,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		newSecret := r.buildGatekeeperSecretAuth(codewind, deploymentOptions, clientKey)
 		reqLogger.Info("Creating a new Gatekeeper Auth Secret", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
 		err = r.client.Create(context.TODO(), newSecret)
-		if err != nil {
+		if err != nil && !k8serr.IsAlreadyExists(err) {
 			reqLogger.Error(err, "Failed to create new Gatekeeper TLS secret.", "Namespace", newSecret.Namespace, "Name", newSecret.Name)
 			return reconcile.Result{}, err
 		}
@@ -472,7 +472,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		newDeployment := r.deploymentForCodewindGatekeeper(codewind, deploymentOptions, isOpenshift, keycloakRealm, keycloakClientID, keycloakAuthURL, codewindConfigMap.IngressDomain)
 		reqLogger.Info("Creating a new Gatekeeper deployment.", "Namespace", codewind.Namespace, "Name", newDeployment.Name)
 		err = r.client.Create(context.TODO(), newDeployment)
-		if err != nil {
+		if err != nil && !k8serr.IsAlreadyExists(err) {
 			reqLogger.Error(err, "Failed to create new Gatekeeper deployment.", "Namespace", codewind.Namespace, "Name", newDeployment.Name)
 			return reconcile.Result{}, err
 		}
@@ -489,7 +489,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		newService := r.serviceForCodewindGatekeeper(codewind, deploymentOptions)
 		reqLogger.Info("Creating a new Codewind gatekeeper Service", "Namespace", newService.Namespace, "Name", newService.Name)
 		err = r.client.Create(context.TODO(), newService)
-		if err != nil {
+		if err != nil && !k8serr.IsAlreadyExists(err) {
 			reqLogger.Error(err, "Failed to create new Codewind gatekeeper service.", "Namespace", newService.Namespace, "Name", newService.Name)
 			return reconcile.Result{}, err
 		}

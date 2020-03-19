@@ -233,7 +233,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 		newServiceAccount := r.serviceAccountForKeycloak(keycloak, deploymentOptions)
 		reqLogger.Info("Creating a new service account", "Namespace", newServiceAccount.Namespace, "Name", newServiceAccount.Name)
 		err = r.client.Create(context.TODO(), newServiceAccount)
-		if err != nil {
+		if err != nil && !k8serr.IsAlreadyExists(err) {
 			reqLogger.Error(err, "Failed to create new Secret.", "Namespace", newServiceAccount.Namespace, "Name", newServiceAccount.Name)
 			return reconcile.Result{}, err
 		}
@@ -250,7 +250,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 		secretUser = r.secretsForKeycloak(keycloak, deploymentOptions)
 		reqLogger.Info("Creating a new Secret", "Namespace", secretUser.Namespace, "Name", secretUser.Name)
 		err = r.client.Create(context.TODO(), secretUser)
-		if err != nil {
+		if err != nil && !k8serr.IsAlreadyExists(err) {
 			reqLogger.Error(err, "Failed to create new Secret.", "Namespace", secretUser.Namespace, "Name", secretUser.Name)
 			return reconcile.Result{}, err
 		}
@@ -267,7 +267,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 		newKeycloakPVC := r.pvcForKeycloak(keycloak, deploymentOptions, storageClassName, configMapCodewind.StorageSize)
 		reqLogger.Info("Creating a new PVC", "Namespace", newKeycloakPVC.Namespace, "Name", newKeycloakPVC.Name)
 		err = r.client.Create(context.TODO(), newKeycloakPVC)
-		if err != nil {
+		if err != nil && !k8serr.IsAlreadyExists(err) {
 			reqLogger.Error(err, "Failed to create new PVC.", "Namespace", newKeycloakPVC.Namespace, "Name", newKeycloakPVC.Name)
 			return reconcile.Result{}, err
 		}
@@ -284,7 +284,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 		dep := r.deploymentForKeycloak(keycloak, deploymentOptions)
 		reqLogger.Info("Creating a new Deployment.", "Namespace", dep.Namespace, "Name", dep.Name)
 		err = r.client.Create(context.TODO(), dep)
-		if err != nil {
+		if err != nil && !k8serr.IsAlreadyExists(err) {
 			reqLogger.Error(err, "Failed to create new Deployment.", "Namespace", dep.Namespace, "Name", dep.Name)
 			return reconcile.Result{}, err
 		}
@@ -304,7 +304,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 		ser := r.serviceForKeycloak(keycloak)
 		reqLogger.Info("Creating a new Service", "Namespace", ser.Namespace, "Name", ser.Name)
 		err = r.client.Create(context.TODO(), ser)
-		if err != nil {
+		if err != nil && !k8serr.IsAlreadyExists(err) {
 			reqLogger.Error(err, "Failed to create new Service.", "Namespace", ser.Namespace, "Name", ser.Name)
 			return reconcile.Result{}, err
 		}
@@ -322,7 +322,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 			openshiftRoute := r.routeForKeycloak(keycloak, deploymentOptions, configMapCodewind.IngressDomain)
 			reqLogger.Info("Creating a new route", "Namespace", openshiftRoute.Namespace, "Name", openshiftRoute.Name)
 			err = r.client.Create(context.TODO(), openshiftRoute)
-			if err != nil {
+			if err != nil && !k8serr.IsAlreadyExists(err) {
 				reqLogger.Error(err, "Failed to create new route.", "Namespace", openshiftRoute.Namespace, "Name", openshiftRoute.Name)
 				return reconcile.Result{}, err
 			}
@@ -341,7 +341,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 			ing := r.ingressForKeycloak(keycloak, deploymentOptions, configMapCodewind.IngressDomain)
 			reqLogger.Info("Creating a new Ingress", "Namespace", ing.Namespace, "Name", ing.Name)
 			err = r.client.Create(context.TODO(), ing)
-			if err != nil {
+			if err != nil && !k8serr.IsAlreadyExists(err) {
 				reqLogger.Error(err, "Failed to create new Ingress.", "Namespace", ing.Namespace, "Name", ing.Name)
 				return reconcile.Result{}, err
 			}
