@@ -14,6 +14,7 @@ package keycloak
 import (
 	codewindv1alpha1 "github.com/eclipse/codewind-operator/pkg/apis/codewind/v1alpha1"
 	defaults "github.com/eclipse/codewind-operator/pkg/controller/defaults"
+	"github.com/eclipse/codewind-operator/pkg/util"
 	routev1 "github.com/openshift/api/route/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -98,6 +99,31 @@ func (r *ReconcileKeycloak) secretsForKeycloak(keycloak *codewindv1alpha1.Keyclo
 		StringData: map[string]string{
 			"keycloak-admin-user":     "admin",
 			"keycloak-admin-password": "admin",
+		},
+	}
+	// Set Keycloak instance as the owner of the secret.
+	controllerutil.SetControllerReference(keycloak, secret, r.scheme)
+	return secret
+}
+
+// secretsTLSForKeycloak function takes in a Keycloak object and returns a TLS Secret for that object.
+func (r *ReconcileKeycloak) secretsTLSForKeycloak(keycloak *codewindv1alpha1.Keycloak, deploymentOptions DeploymentOptionsKeycloak) *corev1.Secret {
+	ls := labelsForKeycloak(keycloak)
+	pemPrivateKey, pemPublicCert, _ := util.GenerateCertificate(deploymentOptions.KeycloakIngressHost, deploymentOptions.KeycloakTLSCertTitle)
+
+	secret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      deploymentOptions.KeycloakTLSSecretsName,
+			Namespace: keycloak.Namespace,
+			Labels:    ls,
+		},
+		StringData: map[string]string{
+			"tls.crt": pemPublicCert,
+			"tls.key": pemPrivateKey,
 		},
 	}
 	// Set Keycloak instance as the owner of the secret.

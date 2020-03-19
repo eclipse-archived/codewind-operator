@@ -48,6 +48,8 @@ type DeploymentOptionsKeycloak struct {
 	KeycloakServiceAccountName string
 	KeycloakPVCName            string
 	KeycloakSecretsName        string
+	KeycloakTLSSecretsName     string
+	KeycloakTLSCertTitle       string
 	KeycloakDeploymentName     string
 	KeycloakServiceName        string
 	KeycloakIngressName        string
@@ -218,6 +220,8 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 		KeycloakServiceAccountName: defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
 		KeycloakPVCName:            defaults.PrefixCodewindKeycloak + "-pvc-" + keycloak.Name,
 		KeycloakSecretsName:        "secret-keycloak-user-" + keycloak.Name,
+		KeycloakTLSSecretsName:     "secret-keycloak-tls-" + keycloak.Name,
+		KeycloakTLSCertTitle:       "Keycloak" + "-" + keycloak.Name,
 		KeycloakDeploymentName:     defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
 		KeycloakServiceName:        defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
 		KeycloakIngressName:        defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
@@ -248,14 +252,31 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Secrets object
 		secretUser = r.secretsForKeycloak(keycloak, deploymentOptions)
-		reqLogger.Info("Creating a new Secret", "Namespace", secretUser.Namespace, "Name", secretUser.Name)
+		reqLogger.Info("Creating a new Keycloak Secret", "Namespace", secretUser.Namespace, "Name", secretUser.Name)
 		err = r.client.Create(context.TODO(), secretUser)
 		if err != nil && !k8serr.IsAlreadyExists(err) {
-			reqLogger.Error(err, "Failed to create new Secret.", "Namespace", secretUser.Namespace, "Name", secretUser.Name)
+			reqLogger.Error(err, "Failed to create new Keycloak Secret.", "Namespace", secretUser.Namespace, "Name", secretUser.Name)
 			return reconcile.Result{}, err
 		}
 	} else if err != nil {
-		reqLogger.Error(err, "Failed to get Secret.")
+		reqLogger.Error(err, "Failed to get Keycloak Secret.")
+		return reconcile.Result{}, err
+	}
+
+	// Check if the Keycloak TLS Secrets already exist, if not create new ones
+	secretTLS := &corev1.Secret{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.KeycloakTLSSecretsName, Namespace: keycloak.Namespace}, secretUser)
+	if err != nil && k8serr.IsNotFound(err) {
+		// Define a new Secrets object
+		secretTLS = r.secretsTLSForKeycloak(keycloak, deploymentOptions)
+		reqLogger.Info("Creating a new Keycloak TLS Secret", "Namespace", secretTLS.Namespace, "Name", secretTLS.Name)
+		err = r.client.Create(context.TODO(), secretTLS)
+		if err != nil && !k8serr.IsAlreadyExists(err) {
+			reqLogger.Error(err, "Failed to create new Keycloak TLS Secret.", "Namespace", secretTLS.Namespace, "Name", secretTLS.Name)
+			return reconcile.Result{}, err
+		}
+	} else if err != nil {
+		reqLogger.Error(err, "Failed to get Keycloak TLS Secret.")
 		return reconcile.Result{}, err
 	}
 
