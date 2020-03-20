@@ -26,6 +26,7 @@ rules:
   - events
   - configmaps
   - secrets
+  - serviceaccounts
   verbs:
   - create
   - delete
@@ -64,6 +65,13 @@ rules:
   - deployments/finalizers
   verbs:
   - update
+- apiGroups:
+  - route.openshift.io
+  resources:
+  - routes
+  - routes/custom-host
+  verbs:
+  - '*'
 - apiGroups:
   - ""
   resources:
