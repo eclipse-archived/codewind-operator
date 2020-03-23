@@ -26,7 +26,7 @@ spec:
       serviceAccountName: codewind-operator
       containers:
         - name: codewind-operator
-          image: REPLACE_IMAGE
+          image: marko11/codewind-operator:0.0.1
           command:
           - codewind-operator
           imagePullPolicy: Always

@@ -7,6 +7,8 @@ $ kubectl create namespace codewind
 $ kubectl create -f ./deploy/service_account.yaml;
 $ kubectl create -f ./deploy/role.yaml;
 $ kubectl create -f ./deploy/role_binding.yaml;
+$ kubectl create -f ./deploy/clusterroles.yaml;
+$ kubectl create -f ./deploy/cluster-role-binding.yaml;
 $ kubectl create -f ./deploy/operator.yaml;
 ```
 
