@@ -59,9 +59,10 @@ type DeploymentOptionsKeycloak struct {
 
 // OperatorConfigMapCodewind : Configuration fields saved in the config map
 type OperatorConfigMapCodewind struct {
-	IngressDomain string
-	StorageSize   string
-	DefaultRealm  string
+	IngressDomain       string
+	StorageSize         string
+	KeycloakStorageSize string
+	DefaultRealm        string
 }
 
 // Add : creates a new Keycloak Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -211,9 +212,10 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 	// Get fields we need from the configmap
 
 	configMapCodewind := OperatorConfigMapCodewind{
-		IngressDomain: operatorConfigMap.Data["ingressDomain"],
-		StorageSize:   operatorConfigMap.Data["storageCodewindSize"],
-		DefaultRealm:  operatorConfigMap.Data["defaultRealm"],
+		IngressDomain:       operatorConfigMap.Data["ingressDomain"],
+		StorageSize:         operatorConfigMap.Data["storageCodewindSize"],
+		KeycloakStorageSize: operatorConfigMap.Data["storageKeycloakSize"],
+		DefaultRealm:        operatorConfigMap.Data["defaultRealm"],
 	}
 
 	deploymentOptions := DeploymentOptionsKeycloak{
@@ -285,7 +287,13 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.KeycloakPVCName, Namespace: keycloak.Namespace}, keycloakPVC)
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new PVC object
-		newKeycloakPVC := r.pvcForKeycloak(keycloak, deploymentOptions, storageClassName, configMapCodewind.StorageSize)
+
+		storageSize := configMapCodewind.KeycloakStorageSize
+		if keycloak.Spec.StorageSize != "" {
+			storageSize = keycloak.Spec.StorageSize
+		}
+
+		newKeycloakPVC := r.pvcForKeycloak(keycloak, deploymentOptions, storageClassName, storageSize)
 		reqLogger.Info("Creating a new PVC", "Namespace", newKeycloakPVC.Namespace, "Name", newKeycloakPVC.Name)
 		err = r.client.Create(context.TODO(), newKeycloakPVC)
 		if err != nil && !k8serr.IsAlreadyExists(err) {
