@@ -13,7 +13,6 @@ package codewind
 
 import (
 	codewindv1alpha1 "github.com/eclipse/codewind-operator/pkg/apis/codewind/v1alpha1"
-	defaults "github.com/eclipse/codewind-operator/pkg/controller/defaults"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -150,7 +149,7 @@ func (r *ReconcileCodewind) roleBindingForCodewind(codewind *codewindv1alpha1.Co
 		Subjects: []rbacv1.Subject{
 			rbacv1.Subject{
 				Kind:      "ServiceAccount",
-				Name:      "codewind-" + deploymentOptions.WorkspaceID,
+				Name:      deploymentOptions.CodewindServiceAccountName,
 				Namespace: codewind.Namespace,
 			},
 		},
@@ -181,13 +180,13 @@ func (r *ReconcileCodewind) roleBindingForCodewindTekton(codewind *codewindv1alp
 		Subjects: []rbacv1.Subject{
 			rbacv1.Subject{
 				Kind:      "ServiceAccount",
-				Name:      "codewind-" + deploymentOptions.WorkspaceID,
+				Name:      deploymentOptions.CodewindServiceAccountName,
 				Namespace: codewind.Namespace,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			Kind:     "ClusterRole",
-			Name:     defaults.CodewindTektonClusterRolesName,
+			Name:     deploymentOptions.CodewindTektonClusterRolesName,
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}

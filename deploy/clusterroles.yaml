@@ -79,6 +79,10 @@ rules:
     resources: ["services"]
     verbs: ["get","list"]
 
+  - apiGroups: [""]
+    resources: ["services/finalizers"]
+    verbs: ["*"]
+
   - apiGroups: ["rbac.authorization.k8s.io"]
     resources: ["clusterroles"]
     verbs: ["create","patch","watch","delete"]
