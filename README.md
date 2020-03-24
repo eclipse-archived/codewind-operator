@@ -4,12 +4,14 @@ Run the following commands to install the operator into your cluster:
 
 ```
 $ kubectl create namespace codewind
-$ kubectl create -f ./deploy/service_account.yaml;
-$ kubectl create -f ./deploy/role.yaml;
-$ kubectl create -f ./deploy/role_binding.yaml;
-$ kubectl create -f ./deploy/cluster_roles.yaml;
-$ kubectl create -f ./deploy/cluster_role_binding.yaml;
-$ kubectl create -f ./deploy/operator.yaml;
+$ kubectl create -f ./deploy/service_account.yaml
+$ kubectl create -f ./deploy/role.yaml
+$ kubectl create -f ./deploy/role_binding.yaml
+$ kubectl create -f ./deploy/cluster_roles.yaml
+$ kubectl create -f ./deploy/cluster_role_binding.yaml
+$ kubectl create -f ./deploy/crds/codewind.eclipse.org_keycloaks_crd.yaml
+$ kubectl create -f ./deploy/crds/codewind.eclipse.org_codewinds_crd.yaml
+$ kubectl create -f ./deploy/operator.yaml
 ```
 
 ## Configuring default config map
