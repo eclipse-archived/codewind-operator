@@ -1,10 +1,10 @@
 # codewind-operator
 
-The Codewind operator simplifies the process of deploying Codewind instances in an Openshift or Kubernetes cluster.
+The Codewind operator helps with the deployment of Codewind instances in an Openshift or Kubernetes cluster.
 
-There should only be one operator per cluster and it should be installed into the codewind namespce.
+There must only be one operator per cluster and it must be installed into the codewind namespace.
 
-To deploy the operator and setup a codewind remote instance clone this repo then proceed with:
+To deploy the Codewind operator and setup a the first Codewind remote instance,  clone this repo then log into your kubernetes / openshift cluster and continue with:
 
 ```
 $ cd {path to repo codewind-operator}
@@ -19,17 +19,18 @@ $ kubectl create -f ./deploy/crds/codewind.eclipse.org_codewinds_crd.yaml
 $ kubectl create -f ./deploy/operator.yaml
 ```
 
-## Configuring default config map
+## Configuring the default config map
 
-The Codewind operator defaults can be found in the file  `./deploy/codewind-configmap.yaml`  You will need to modify this file setting the ingressDomain value to one specific to your cluster. The Ingress domain will be appended to any routes and URLs created by the operator. It must already be registered in your DNS service and should resolve correctly from both inside and outside of the cluster.
+The Codewind operator defaults can be found in the config-map file  `./deploy/codewind-configmap.yaml`  Modify this file setting the ingressDomain value to one specific to your cluster. The Ingress domain will be appended to any routes and URLs created by the operator. It must already be registered in your DNS service and should resolve correctly from both inside and outside of the cluster.
 
-eg yaml:
+example:
 
 ```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: codewind-operator
+  namespace: codewind
 data:
   ingressDomain: 10.98.117.7.nip.io
   defaultRealm: codewind

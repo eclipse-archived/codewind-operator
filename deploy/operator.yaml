@@ -13,6 +13,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: codewind-operator
+  namespace: codewind
 spec:
   replicas: 1
   selector:

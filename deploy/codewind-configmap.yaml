@@ -13,6 +13,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: codewind-operator
+  namespace: codewind
 data:
   ingressDomain: codewind.apps-crc.testing
   defaultRealm: codewind
