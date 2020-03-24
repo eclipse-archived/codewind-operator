@@ -190,7 +190,6 @@ func (r *ReconcileCodewind) roleBindingForCodewindTekton(codewind *codewindv1alp
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}
-	// Set Codewind instance as the owner of these role bindings.
-	controllerutil.SetControllerReference(codewind, rolebinding, r.scheme)
+
 	return rolebinding
 }

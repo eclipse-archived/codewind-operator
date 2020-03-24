@@ -3,40 +3,21 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: codewind-operator-cluster
 rules:
-  - apiGroups: ["security.openshift.io"]
-    resources: ["securitycontextconstraints"]
-    verbs: ["use"]
 
   - apiGroups: [""]
-    resources: ["persistentvolumes"]
-    verbs: ["get", "list", "watch", "create", "delete"]
+    resources: ["configmaps"]
+    verbs: ["get", "watch", "list", "create", "update", "delete", "patch", "use"]
 
   - apiGroups: [""]
-    resources: ["persistentvolumeclaims",persistentvolumeclaims/finalizers,"persistentvolumeclaims/status"]
-    verbs: ["*","get", "list", "watch", "update"]
-
-  - apiGroups: ["storage.k8s.io"]
-    resources: ["storageclasses"]
-    verbs: ["get", "list", "watch"]
+    resources: ["deployments/finalizers"]
+    verbs: ["watch", "get","list","create", "update","delete","patch"]
 
   - apiGroups: [""]
     resources: ["events"]
     verbs: ["list", "watch", "create", "update", "patch"]
 
-  - apiGroups: ["rbac.authorization.k8s.io"]
-    resources: ["rolebindings"]
-    verbs: ["get","list","create","watch","patch","update"]
-
-  - apiGroups: ["extensions"]
-    resources: ["ingresses","ingresses/status"]
-    verbs: ["delete","create","patch","get","list","update","watch","use"]
-
-  - apiGroups: ["extensions"]
-    resources: ["podsecuritypolicies"]
-    verbs: ["delete","create","patch","get","list","update","watch","use"]
-
   - apiGroups: [""]
-    resources: [ingresses","ingresses/status"]
+    resources: ["ingresses","ingresses/status"]
     verbs: ["delete","create","patch","get","list","update","watch","use"]
 
   - apiGroups: [""]
@@ -48,40 +29,72 @@ rules:
     verbs: ["get","list","create","delete","patch"]
 
   - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims",persistentvolumeclaims/finalizers,"persistentvolumeclaims/status"]
+    verbs: ["*","get", "list", "watch", "update"]
+
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "watch", "list", "create", "delete"]
+
+  - apiGroups: [""]
     resources: ["pods/exec","pods/log","pods/portforward"]
     verbs: ["get","list","create","delete","watch"]
 
-  - apiGroups: ["icp.ibm.com"]
-    resources: ["images"]
-    verbs: ["get","list","create","watch"]
-  
   - apiGroups: [""]
-    resources: ["deployments/finalizers"]
-    verbs: ["watch", "get","list","create", "update","delete","patch"]
-  
-  - apiGroups: ["apps"]
-    resources: ["deployments/finalizers"]
-    verbs: ["watch", "get","list","create", "update","delete","patch"]
-  
-  - apiGroups: ["extensions"]
-    resources: ["deployments","deployments/finalizers"]
-    verbs: ["watch", "get","list","create", "update","delete","patch"]
-  
-  - apiGroups: ["extensions"]
-    resources: ["replicasets","replicasets/finalizers"]
-    verbs: ["get","list","update","delete"]
-  
-  - apiGroups: ["apps"]
-    resources: ["replicasets/finalizers"]
-    verbs: ["get","list","update","delete"]
+    resources: ["secrets"]
+    verbs: ["get", "watch", "list", "create","patch","update", "delete"]
+
+  - apiGroups: [""]
+    resources: ["serviceaccounts"]
+    verbs: ["get","patch"]
 
   - apiGroups: [""]
     resources: ["services"]
-    verbs: ["get","list"]
+    verbs: ["get","list","create","delete","patch"]
 
   - apiGroups: [""]
     resources: ["services/finalizers"]
     verbs: ["*"]
+
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["watch", "get", "list", "create", "update", "delete", "patch"]
+
+  - apiGroups: ["apps"]
+    resources: ["deployments/finalizers"]
+    verbs: ["watch", "get","list","create", "update","delete","patch"]
+
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["delete", "get", "list","update"]
+
+  - apiGroups: ["apps"]
+    resources: ["replicasets/finalizers"]
+    verbs: ["get","list","update","delete"]
+
+  - apiGroups: ["icp.ibm.com"]
+    resources: ["images"]
+    verbs: ["get","list","create","watch"]
+
+  - apiGroups: ["extensions"]
+    resources: ["deployments","deployments/finalizers"]
+    verbs: ["watch", "get","list","create", "update","delete","patch"]
+
+  - apiGroups: ["extensions"]
+    resources: ["ingresses","ingresses/status"]
+    verbs: ["delete","create","patch","get","list","update","watch","use"]
+
+  - apiGroups: ["extensions"]
+    resources: ["podsecuritypolicies"]
+    verbs: ["delete","create","patch","get","list","update","watch","use"]
+
+  - apiGroups: ["extensions"]
+    resources: ["replicasets","replicasets/finalizers"]
+    verbs: ["get","list","update","delete"]
 
   - apiGroups: ["rbac.authorization.k8s.io"]
     resources: ["clusterroles"]
@@ -92,6 +105,21 @@ rules:
     verbs: ["get","create","list","update","delete","patch","watch"]
 
   - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["rolebindings"]
+    verbs: ["get","list","create","watch","patch","update"]
+
+  - apiGroups: ["rbac.authorization.k8s.io"]
     resources: ["roles"]
     verbs: ["create","get","patch","list", "watch"]
 
+  - apiGroups: ["route.openshift.io"]
+    resources: ["routes","routes/custom-host"]
+    verbs: ["watch","get","list","create","update","delete","patch"]
+
+  - apiGroups: ["security.openshift.io"]
+    resources: ["securitycontextconstraints"]
+    verbs: ["use"]
+
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses"]
+    verbs: ["get", "list", "watch"]
