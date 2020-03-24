@@ -154,21 +154,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// Watch for changes to the Keycloak PVC storage to update status when its availablity changes
-	pvc := &source.Kind{Type: &corev1.PersistentVolumeClaim{}}
-	hpvc := &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &codewindv1alpha1.Keycloak{},
-	}
-	pred := predicate.Funcs{
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			return true
-		},
-	}
-	err = c.Watch(pvc, hpvc, pred)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
