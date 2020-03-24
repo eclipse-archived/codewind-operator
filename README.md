@@ -1,8 +1,13 @@
 # codewind-operator
 
-Run the following commands to install the operator into your cluster:
+The Codewind operator simplifies the process of deploying Codewind instances in an Openshift or Kubernetes cluster.
+
+There should only be one operator per cluster and it should be installed into the codewind namespce.
+
+To deploy the operator and setup a codewind remote instance clone this repo then proceed with:
 
 ```
+$ cd {path to repo codewind-operator}
 $ kubectl create namespace codewind
 $ kubectl create -f ./deploy/service_account.yaml
 $ kubectl create -f ./deploy/role.yaml
