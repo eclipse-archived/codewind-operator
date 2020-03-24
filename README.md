@@ -208,3 +208,24 @@ If the user was assigned a temporary password, they will need to login to Codewi
 2. Log in using the provided username and initial password
 3. follow the prompts to change the password
 4. proceed with setting up the IDE connection using the newly changed password
+
+
+
+# Building the Operator
+
+To build the operator container image from source, run the command :
+
+```
+$ brew install operator-sdk
+$ operator-sdk version
+operator-sdk version: "v0.15.2", commit: "ffaf278993c8fcb00c6f527c9f20091eb8dd3352", go version: "go1.13.8 darwin/amd64"
+$ export GO111MODULE=on
+$ cd {pathToCodewindOperatorCode}
+$ go mod tidy
+$ operator-sdk build {yourDockerRegistry}/codewind-operator:latest
+$ docker push {yourDockerRegistry}/codewind-operator:latest
+```
+Then before deploying the operator modify the image listed in the file ./deploy/operator.yaml to point to your build image
+
+
+
