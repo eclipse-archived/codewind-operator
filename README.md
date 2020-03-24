@@ -43,7 +43,7 @@ $ kubectl apply -f ./deploy/codewind-configmap.yaml
 
 Keycloak is deployed and setup using the operator.
 
-Import the following YAML to configure a default instance of Keycloak. For convenience, a copy of this file is provided in `./deploy/crds/codewind.eclipse.org_v1alpha1_keycloak_cr.yaml`
+Import the following YAML to configure a default instance of Keycloak. For convenience, a copy of this file is provided in this code repo under `./deploy/crds/codewind.eclipse.org_v1alpha1_keycloak_cr.yaml`
 
 In this example a new Keycloak service will be created called "devex001" in the namespace "codewind" with a PVC claim of 1GB
 
@@ -103,7 +103,7 @@ replicaset.apps/codewind-keycloak-devex001-7454d4ff6c   1         1         1   
 
 ## Preparing Keycloak for Codewind
 
-During deployment of the Keycloak service, the operator will configur the security realm as specified by the defaults config map.
+During deployment of the Keycloak service, the operator will configure the security realm as specified by the defaults config map.
 
 Before Codewind services can be installed, users must be added to Keycloak achieved via the Keycloak Admin web page.  Each Codewind deployment must be tied to a existing user account.
 
@@ -122,12 +122,12 @@ By default, Keycloak is installed with an admin account where :
 
 Open the keycloak Access URL in a browser and accept the self signed certificate warnings. 
 
-*Click:   Administration Console from the link provided
+* Click:   Administration Console from the link provided
 * Log into Keycloak using the Keycloak admin credentials.
   - username :   admin
   - password :   admin
   
-IMPORTANT: Once logged in,  change the admin password by clicking the `Admin` link in the top right of the page. Then choose `Manage Account / Password` and set a new replacement administrator password.
+IMPORTANT: Once logged in, change the admin password by clicking the `Admin` link in the top right of the page. Then choose `Manage Account / Password` and set a new replacement administrator password.
 
 * Switch back to the admin console using the link at the top of the page. Or alternatively logout and log back into Keycloak as the admin user with your new admin password.
 
@@ -152,9 +152,9 @@ Log out of the keycloak admin page
 
 ## Deploy a Codewind instance
 
-Deploying a new Codewind instance will involve applying a piece of YAML.
+Deploying a new Codewind instance will involve applying one last piece of YAML.
 
-A copy of this yaml is available : 
+A copy of this yaml is available in this repo under : 
 
 `./deploy/crds/codewind.eclipse.org_v1alpha1_codewind_cr.yaml `
 
@@ -184,7 +184,6 @@ Things to note :
 * the `name` field is the name of the deployment and must be unique within the cluster.
 * the `keycloakDeployment` field is the name of the keycloak instance that will provide authentication services.  It must have already been provisioned and running.
 * the `username` field is the keycloak registered user who will own this Codewind instance.
-* the `workspaceID` is a short name label used to identify this deployment.
 * the `loglevel` can be used to increase log levels of the codewind pods.
 * the `storageSize` field sets the PVC size to 10GB.
 
