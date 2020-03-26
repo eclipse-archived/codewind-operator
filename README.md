@@ -8,15 +8,24 @@ To deploy the Codewind operator and setup a the first Codewind remote instance, 
 
 ```
 $ cd {path to repo codewind-operator}
-$ kubectl create namespace codewind
-$ kubectl create -f ./deploy/service_account.yaml
-$ kubectl create -f ./deploy/role.yaml
-$ kubectl create -f ./deploy/role_binding.yaml
-$ kubectl create -f ./deploy/cluster_roles.yaml
-$ kubectl create -f ./deploy/cluster_role_binding.yaml
-$ kubectl create -f ./deploy/crds/codewind.eclipse.org_keycloaks_crd.yaml
-$ kubectl create -f ./deploy/crds/codewind.eclipse.org_codewinds_crd.yaml
-$ kubectl create -f ./deploy/operator.yaml
+$ kubectl create namespace codewind 
+(this has to be codewind)
+$ kubectl create -f ./deploy/service_account.yaml 
+(service account for which the operator will run under, a lot of permissions required)
+$ kubectl create -f ./deploy/role.yaml 
+(RBAC permissions to assign - i.e. create Ingress, routes etc)
+$ kubectl create -f ./deploy/role_binding.yaml 
+(connects service account to role)
+$ kubectl create -f ./deploy/cluster_roles.yaml 
+(permissions at namespace level not sufficient, need permissions at cluster level, talk to services outside of namespace)
+$ kubectl create -f ./deploy/cluster_role_binding.yaml 
+(connects service account to role)
+$ kubectl create -f ./deploy/crds/codewind.eclipse.org_keycloaks_crd.yaml 
+(extend kube api to make aware of keycloak)
+$ kubectl create -f ./deploy/crds/codewind.eclipse.org_codewinds_crd.yaml 
+(extend kube api to make aware of codewind)
+$ kubectl create -f ./deploy/operator.yaml 
+(downloads images into the cluster)
 ```
 
 ## Configuring the default config map
