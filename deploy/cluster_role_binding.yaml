@@ -1,0 +1,12 @@
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: codewind-operator-clb
+subjects:
+  - kind: ServiceAccount
+    name: codewind-operator
+    namespace: codewind
+roleRef:
+  kind: ClusterRole
+  name: codewind-operator-cluster
+  apiGroup: rbac.authorization.k8s.io
