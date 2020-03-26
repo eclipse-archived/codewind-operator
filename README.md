@@ -84,7 +84,7 @@ NAME       NAMESPACE   AGE   ACCESS
 devex001   codewind    4s    https://codewind-keycloak-devex001.10.98.117.7.nip.io
 ```
 
-During deployment,  the operator will create: 
+During deployment,  the operator will create:
 
 1. A service account
 2. A deployment
@@ -141,7 +141,7 @@ Open the keycloak Access URL in a browser and accept the self signed certificate
 * Log into Keycloak using the Keycloak admin credentials.
   - username :   admin
   - password :   admin
-  
+
 IMPORTANT: Once logged in, change the admin password by clicking the `Admin` link in the top right of the page. Then choose `Manage Account / Password` and set a new replacement administrator password.
 
 * Switch back to the admin console using the link at the top of the page. Or alternatively logout and log back into Keycloak as the admin user with your new admin password.
@@ -164,12 +164,28 @@ The field Temporary = On will require Jane to change her password during first c
 Click:  Set Password to save changes
 Log out of the keycloak admin page
 
+## Updating the keycloak password in the operator secret
+
+When the Codewind Operator needs to update Keycloak it uses login credentials saved in a Kubernetes secret.  By default during deployment that secret will have a username and password of "admin". If you changed your admin password in a previous step, you will need to update the keycloak secret to match.
+
+The secret is installed in the same namespace as the operator (codewind) and named `secret-keycloak-user-{keycloakname}`
+
+If you have an adminsration UI for you cluster you may use it to locate the secret and edit the `keycloak-admin-password` field or from the command line using `kubectl edit secret secret-keycloak-user-{keycloakname}` or `oc edit secret secret-keycloak-user-{keycloakname}`
+
+Note: Using the command line tools does require an extra step to base64 your password string before saving it into the secret.  You can base64 encode your new password using:
+
+```
+$ echo -n 'myNewPassword' | base64
+bXlOZXdQYXNzd29yZA==
+```
+
+then save `bXlOZXdQYXNzd29yZA==` as the value for `keycloak-admin-password` rather than `myNewPassword`
 
 ## Deploy a Codewind instance
 
 Deploying a new Codewind instance will involve applying one last piece of YAML.
 
-A copy of this yaml is available in this repo under : 
+A copy of this yaml is available in this repo under :
 
 `./deploy/crds/codewind.eclipse.org_v1alpha1_codewind_cr.yaml `
 
