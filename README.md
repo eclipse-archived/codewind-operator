@@ -4,7 +4,7 @@ The Codewind operator helps with the deployment of Codewind instances in an Open
 
 There must only be one operator per cluster and it must be installed into the Codewind namespace.
 
-To deploy the Codewind operator and setup a first Codewind remote instance,  clone this repo then log into your kubernetes / openshift cluster and continue with:
+To deploy the Codewind operator and setup a first Codewind remote instance, clone this repo, log into your Kubernetes or Openshift cluster and continue with:
 
 ```
 $ cd {path to repo codewind-operator}
@@ -69,7 +69,6 @@ Import the file using :
 ```
 $ kubectl apply -f ./deploy/codewind-configmap.yaml
 ```
-
 
 ## Creating an initial Keycloak service
 
@@ -169,11 +168,11 @@ Then choose `Manage Account / Password` and set a new replacement administrator 
 
 Ensure that the Realm is set to "Codewind" by clicking on the drop down arrow in the top right of the page. Select Codewind if necessary. Then:
 
-* Click: Users
-* Click: Add user
-* Complete username field:  jane
-* Complete email / Firstname / Lastname: as required
-* Ensure user enabled: On
+- Click: Users
+- Click: Add user
+- Complete username field:  jane
+- Complete email / Firstname / Lastname: as required
+- Ensure user enabled: On
 - Click: Save
 
 Assign an initial password to the user account by clicking 'Credentials' and then add their initial password.
@@ -206,7 +205,7 @@ Deploying a new Codewind instance will involve applying one last piece of YAML.
 
 A copy of this yaml is available in this repo under :
 
-`./deploy/crds/codewind.eclipse.org_v1alpha1_codewind_cr.yaml `
+`./deploy/crds/codewind.eclipse.org_v1alpha1_codewind_cr.yaml`
 
 To deploy Codewind change the following fields :
 
