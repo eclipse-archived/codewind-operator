@@ -98,7 +98,7 @@ rules:
 
   - apiGroups: ["rbac.authorization.k8s.io"]
     resources: ["clusterroles"]
-    verbs: ["create","patch","watch","delete"]
+    verbs: ["get","create","list","patch","watch","delete"]
 
   - apiGroups: ["rbac.authorization.k8s.io"]
     resources: ["clusterrolebindings"]
