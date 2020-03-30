@@ -2,49 +2,52 @@
 
 The Codewind operator helps with the deployment of Codewind instances in an Openshift or Kubernetes cluster.
 
-There must only be one operator per cluster and it must be installed into the codewind namespace.
+There must only be one operator per cluster and it must be installed into the Codewind namespace.
 
-To deploy the Codewind operator and setup a the first Codewind remote instance,  clone this repo then log into your kubernetes / openshift cluster and continue with:
+To deploy the Codewind operator and setup a first Codewind remote instance,  clone this repo then log into your kubernetes / openshift cluster and continue with:
 
 ```
 $ cd {path to repo codewind-operator}
-$ kubectl create namespace codewind 
+$ kubectl create namespace codewind
 (this has to be codewind)
-$ kubectl create -f ./deploy/service_account.yaml 
+$ kubectl create -f ./deploy/service_account.yaml
 (service account for which the operator will run under, a lot of permissions required)
-$ kubectl create -f ./deploy/role.yaml 
+$ kubectl create -f ./deploy/role.yaml
 (RBAC permissions to assign - i.e. create Ingress, routes etc)
-$ kubectl create -f ./deploy/role_binding.yaml 
+$ kubectl create -f ./deploy/role_binding.yaml
 (connects service account to role)
-$ kubectl create -f ./deploy/cluster_roles.yaml 
+$ kubectl create -f ./deploy/cluster_roles.yaml
 (permissions at namespace level not sufficient, need permissions at cluster level, talk to services outside of namespace)
-$ kubectl create -f ./deploy/cluster_role_binding.yaml 
+$ kubectl create -f ./deploy/cluster_role_binding.yaml
 (connects service account to role)
 ```
 
-Create the CRD.  For Openshift 3.11.x clusters: 
+Create the CRD.  For Openshift 3.11.x clusters:
 
 ```
-$ kubectl create -f ./deploy/crds/codewind.eclipse.org_keycloaks_crd-oc311.yaml 
+$ kubectl create -f ./deploy/crds/codewind.eclipse.org_keycloaks_crd-oc311.yaml
 $ kubectl create -f ./deploy/crds/codewind.eclipse.org_codewinds_crd-oc311.yaml
 ```
 
-For other versions of Openshift and Kubernetes: 
+For other versions of Openshift and Kubernetes:
 
 ```
-$ kubectl create -f ./deploy/crds/codewind.eclipse.org_keycloaks_crd.yaml 
-$ kubectl create -f ./deploy/crds/codewind.eclipse.org_codewinds_crd.yaml 
+$ kubectl create -f ./deploy/crds/codewind.eclipse.org_keycloaks_crd.yaml
+$ kubectl create -f ./deploy/crds/codewind.eclipse.org_codewinds_crd.yaml
 ```
 
 Deploy the operator
 ```
-$ kubectl create -f ./deploy/operator.yaml 
+$ kubectl create -f ./deploy/operator.yaml
 (downloads images into the cluster)
 ```
 
 ## Configuring the default config map
 
-The Codewind operator defaults can be found in the config-map file  `./deploy/codewind-configmap.yaml`  Modify this file setting the ingressDomain value to one specific to your cluster. The Ingress domain will be appended to any routes and URLs created by the operator. It must already be registered in your DNS service and should resolve correctly from both inside and outside of the cluster.
+The Codewind operator defaults can be found in the config-map file  `./deploy/codewind-configmap.yaml`.
+Modify this file setting the ingressDomain value to one specific to your cluster.
+The Ingress domain will be appended to any routes and URLs created by the operator.
+It must already be registered in your DNS service and should resolve correctly from both inside and outside of the cluster.
 
 example:
 
@@ -72,10 +75,10 @@ $ kubectl apply -f ./deploy/codewind-configmap.yaml
 
 Keycloak is deployed and setup using the operator.
 
-Import the following YAML to configure a default instance of Keycloak. For convenience, a copy of this file is provided in this code repo under `./deploy/crds/codewind.eclipse.org_v1alpha1_keycloak_cr.yaml`
+Import the following YAML to configure a default instance of Keycloak.
+For convenience, a copy of this file is provided in this repo under `./deploy/crds/codewind.eclipse.org_v1alpha1_keycloak_cr.yaml`.
 
-In this example a new Keycloak service will be created called "devex001" in the namespace "codewind" with a PVC claim of 1GB
-
+In this example a new Keycloak service will be created called "devex001" in the namespace "codewind" with a PVC claim of 1GB.
 
 ```yaml
 apiVersion: codewind.eclipse.org/v1alpha1
@@ -87,7 +90,7 @@ spec:
   storageSize: 1Gi
 ```
 
-eg:
+e.g:
 
 ```bash
 $ kubectl apply -f ./deploy/crds/codewind.eclipse.org_v1alpha1_keycloak_cr.yaml
@@ -109,7 +112,7 @@ During deployment,  the operator will create:
 7. A storage claim
 8. Any secrets
 
-eg:
+e.g:
 
 ```
 NAME                         SECRETS   AGE
@@ -134,7 +137,8 @@ replicaset.apps/codewind-keycloak-devex001-7454d4ff6c   1         1         1   
 
 During deployment of the Keycloak service, the operator will configure the security realm as specified by the defaults config map.
 
-Before Codewind services can be installed, users must be added to Keycloak achieved via the Keycloak Admin web page.  Each Codewind deployment must be tied to a existing user account.
+Before Codewind services can be installed, users must be added to Keycloak. This is achieved via the Keycloak Admin web page.
+Each Codewind deployment must be tied to an existing user account.
 
 To see the Keycloak access URL use the command :
 
@@ -149,18 +153,19 @@ By default, Keycloak is installed with an admin account where :
 - Keycloak administrator username = admin
 - Keycloak password = admin
 
-Open the keycloak Access URL in a browser and accept the self signed certificate warnings. 
+Open the keycloak Access URL in a browser and accept the self signed certificate warnings.
 
-* Click:   Administration Console from the link provided
-* Log into Keycloak using the Keycloak admin credentials.
+- Click:   Administration Console from the link provided
+- Log into Keycloak using the Keycloak admin credentials.
   - username :   admin
   - password :   admin
 
-IMPORTANT: Once logged in, change the admin password by clicking the `Admin` link in the top right of the page. Then choose `Manage Account / Password` and set a new replacement administrator password.
+IMPORTANT: Once logged in, change the admin password by clicking the `Admin` link in the top right of the page.
+Then choose `Manage Account / Password` and set a new replacement administrator password.
 
-* Switch back to the admin console using the link at the top of the page. Or alternatively logout and log back into Keycloak as the admin user with your new admin password.
+- Switch back to the admin console using the link at the top of the page. Or alternatively logout and log back into Keycloak as the admin user with your new admin password.
 
-# Registering Codewind users :
+## Registering Codewind users
 
 Ensure that the Realm is set to "Codewind" by clicking on the drop down arrow in the top right of the page. Select Codewind if necessary. Then:
 
@@ -169,7 +174,7 @@ Ensure that the Realm is set to "Codewind" by clicking on the drop down arrow in
 * Complete username field:  jane
 * Complete email / Firstname / Lastname: as required
 * Ensure user enabled: On
-* Click: Save
+- Click: Save
 
 Assign an initial password to the user account by clicking 'Credentials' and then add their initial password.
 
@@ -226,11 +231,11 @@ spec:
 
 Things to note :
 
-* the `name` field is the name of the deployment and must be unique within the cluster.
-* the `keycloakDeployment` field is the name of the keycloak instance that will provide authentication services.  It must have already been provisioned and running.
-* the `username` field is the keycloak registered user who will own this Codewind instance.
-* the `loglevel` can be used to increase log levels of the codewind pods.
-* the `storageSize` field sets the PVC size to 10GB.
+- the `name` field is the name of the deployment and must be unique within the cluster.
+- the `keycloakDeployment` field is the name of the keycloak instance that will provide authentication services. It must have already been provisioned and be running.
+- the `username` field is the keycloak registered user who will own this Codewind instance.
+- the `loglevel` can be used to increase log levels of the Codewind pods.
+- the `storageSize` field sets the PVC size to 10GB.
 
 Apply this yaml and have the operator create and configure both Codewind and Keycloak:
 
@@ -243,22 +248,20 @@ NAME                USERNAME   NAMESPACE   AGE   KEYCLOAK   AUTHSTATUS   ACCESSU
 jane1               jane       codewind    23m   devex001   Completed    https://codewind-gatekeeper-jane1.10.98.117.7.nip.io
 ```
 
-The `kubectl get codewinds` command lists all the running Codewind deployments and the username of the developer it has been assigned. The Keycloak service name and auth config status is also displyed along with the Access URL that needs to be added to the IDE when creating a connection.
+The `kubectl get codewinds` command lists all the running Codewind deployments and the username of the developer it has been assigned. The Keycloak service name and auth config status is also displayed along with the Access URL that needs to be added to the IDE when creating a connection.
 
 Note:
 
-If the user was assigned a temporary password, they will need to login to Codewind from a browser and complete the steps necessary to set a new password and activte their account.
+If the user was assigned a temporary password, they will need to login to Codewind from a browser and complete the steps necessary to set a new password and activate their account.
 
 1. Open the gatekeeper URL for the Codewind deployment
 2. Log in using the provided username and initial password
 3. follow the prompts to change the password
 4. proceed with setting up the IDE connection using the newly changed password
 
+## Building the Operator
 
-
-# Building the Operator
-
-To build the operator container image from source, run the command :
+To build the operator container image from source, run the command:
 
 ```
 $ brew install operator-sdk
@@ -270,7 +273,5 @@ $ go mod tidy
 $ operator-sdk build {yourDockerRegistry}/codewind-operator:latest
 $ docker push {yourDockerRegistry}/codewind-operator:latest
 ```
-Then before deploying the operator modify the image listed in the file ./deploy/operator.yaml to point to your build image
 
-
-
+Then before deploying the operator modify the image listed in the file `./deploy/operator.yaml` to point to your build image
