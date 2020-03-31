@@ -20,10 +20,24 @@ $ kubectl create -f ./deploy/cluster_roles.yaml
 (permissions at namespace level not sufficient, need permissions at cluster level, talk to services outside of namespace)
 $ kubectl create -f ./deploy/cluster_role_binding.yaml 
 (connects service account to role)
+```
+
+Create the CRD.  For Openshift 3.11.x clusters: 
+
+```
+$ kubectl create -f ./deploy/crds/codewind.eclipse.org_keycloaks_crd-oc311.yaml 
+$ kubectl create -f ./deploy/crds/codewind.eclipse.org_codewinds_crd-oc311.yaml
+```
+
+For other versions of Openshift and Kubernetes: 
+
+```
 $ kubectl create -f ./deploy/crds/codewind.eclipse.org_keycloaks_crd.yaml 
-(extend kube api to make aware of keycloak)
 $ kubectl create -f ./deploy/crds/codewind.eclipse.org_codewinds_crd.yaml 
-(extend kube api to make aware of codewind)
+```
+
+Deploy the operator
+```
 $ kubectl create -f ./deploy/operator.yaml 
 (downloads images into the cluster)
 ```
