@@ -13,6 +13,7 @@ package codewind
 
 import (
 	"strconv"
+	"strings"
 
 	codewindv1alpha1 "github.com/eclipse/codewind-operator/pkg/apis/codewind/v1alpha1"
 	defaults "github.com/eclipse/codewind-operator/pkg/controller/defaults"
@@ -408,7 +409,7 @@ func (r *ReconcileCodewind) deploymentForCodewindGatekeeper(codewind *codewindv1
 							},
 							{
 								Name:  "WORKSPACE_SERVICE",
-								Value: "CODEWIND_PFE_" + deploymentOptions.WorkspaceID,
+								Value: "CODEWIND_PFE_" + strings.ToUpper(deploymentOptions.WorkspaceID),
 							},
 							{
 								Name:  "WORKSPACE_ID",
