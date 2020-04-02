@@ -134,7 +134,7 @@ spec:
                             # If CHANGE_TARGET is set then this is a PR so don't push to master.
                             if [ -z "$CHANGE_TARGET" ]; then
                                 export TAG=$GIT_BRANCH
-                                if [[ $GIT_BRANCH == "master" ]]; then
+                                if [ "$GIT_BRANCH" = "master" ]; then
                                     TAG="latest"
                                 fi
                                 docker tag eclipse/codewind-operator-amd64:latest eclipse/codewind-operator-amd64:$TAG
