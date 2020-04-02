@@ -362,10 +362,14 @@ func (r *ReconcileCodewind) serviceForCodewindGatekeeper(codewind *codewindv1alp
 	return service
 }
 
-// deploymentForCodewindGatekeeper returns a Codewind dployment object
+// deploymentForCodewindGatekeeper returns a Codewind deployment object
 func (r *ReconcileCodewind) deploymentForCodewindGatekeeper(codewind *codewindv1alpha1.Codewind, deploymentOptions DeploymentOptionsCodewind, isOnOpenshift bool, keycloakRealm string, keycloakClientID string, keycloakAuthURL string, ingressDomain string) *appsv1.Deployment {
 	ls := labelsForCodewindGatekeeper(deploymentOptions)
 	replicas := int32(1)
+
+	// Replace any dash characters in the WorkspaceID to understore characters to match variable formats created by Kubernetes
+	workspaceServiceSuffix := strings.ReplaceAll(strings.ToUpper(deploymentOptions.WorkspaceID), "-", "_")
+
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      defaults.PrefixCodewindGatekeeper + "-" + deploymentOptions.WorkspaceID,
@@ -409,7 +413,7 @@ func (r *ReconcileCodewind) deploymentForCodewindGatekeeper(codewind *codewindv1
 							},
 							{
 								Name:  "WORKSPACE_SERVICE",
-								Value: "CODEWIND_PFE_" + strings.ToUpper(deploymentOptions.WorkspaceID),
+								Value: "CODEWIND_PFE_" + workspaceServiceSuffix,
 							},
 							{
 								Name:  "WORKSPACE_ID",
