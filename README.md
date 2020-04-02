@@ -43,16 +43,16 @@ Connect the Operator service account to the cluster roles
 $ kubectl create -f ./deploy/cluster_role_binding.yaml
 ```
 
-Depending which version of Kubernetes or Openshift you using, create the Custom Resource Definitions (CRD) for your environment.
+Depending which version of Kubernetes or OpenShift you using, create the Custom Resource Definitions (CRD) for your environment.
 
-For Openshift 3.11.x clusters:
+For OpenShift 3.11.x clusters:
 ```
 $ kubectl create -f ./deploy/crds/codewind.eclipse.org_keycloaks_crd-oc311.yaml
 $ kubectl create -f ./deploy/crds/codewind.eclipse.org_codewinds_crd-oc311.yaml
 ```
 
 For other versions including :
-- Openshift 4.x
+- OpenShift OCP 4.x
 - Code Ready Containers 1.16.2 BuildDate:2020-02-03T23:11:39Z
 - Kubernetes 1.16+
 
@@ -153,14 +153,17 @@ During deployment,  the operator will create:
 7. A storage claim
 8. Any secrets
 
-You can check these using standard kubernetes or oc commands such as:
+You can check these using standard Kubernetes or oc commands such as:
 
-`$ kubectl get serviceaccount -n codewind`
-`$ kubectl get deployments -n codewind`
-`$ kubectl get pods -n codewind`
-`$ kubectl get services -n codewind`
+```
+$ kubectl get serviceaccount -n codewind
+$ kubectl get deployments -n codewind
+$ kubectl get pods -n codewind
+$ kubectl get services -n codewind
+$ kubectl get pvc -n codewind
+```
 
-e.g:
+which will show each kind e.g:
 
 ```
 NAME                         SECRETS   AGE
@@ -203,6 +206,21 @@ By default, Keycloak is installed with an admin account where:
 - Keycloak password = admin
 
 Open the keycloak Access URL in a browser and accept the self signed certificate warnings.
+
+If you are unable to connect to Keycloak, check that the pod has started running and that storage has been provisioned.
+
+You can inspect the storage claim status with :
+
+```
+$ kubectl get pvc -n codewind
+(check that the status shows **Bound** for the entry codewind-keycloak-pvc-{keycloakName})
+```
+
+and inspect the Keycloak pod status with :
+```
+$ kubect get pods -n codewind
+(check that the returned codewind-keycloak-{keycloakName} entry shows **Running** with 1 container of 1 ready)
+```
 
 - Click:   Administration Console from the link provided
 - Log into Keycloak using the Keycloak admin credentials.
