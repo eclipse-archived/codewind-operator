@@ -13,7 +13,7 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
 LABEL vendor="Codewind" \
       name="Codewind Operator" \
-      version="0.0.1" \
+      version="0.11.0" \
       summary="Codewind Operator" \
       description="An operator that helps manage the deployment and configuration of Codewind Remote instances on Kubernetes"
 
