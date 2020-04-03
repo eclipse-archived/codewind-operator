@@ -131,7 +131,7 @@ spec:
   storageSize: 1Gi
 ```
 
-e.g:
+For example:
 
 ```bash
 $ kubectl apply -f ./deploy/crds/codewind.eclipse.org_v1alpha1_keycloak_cr.yaml
@@ -163,7 +163,7 @@ $ kubectl get services -n codewind
 $ kubectl get pvc -n codewind
 ```
 
-which will show each kind e.g:
+which will show each kind, for example:
 
 ```
 NAME                         SECRETS   AGE
@@ -324,7 +324,7 @@ NAME                USERNAME   NAMESPACE   AGE   KEYCLOAK   AUTHSTATUS   ACCESSU
 jane1               jane       codewind    23m   devex001   Completed    https://codewind-gatekeeper-jane1.10.98.117.7.nip.io
 ```
 
-The `kubectl get codewinds` command lists all the running Codewind deployments in the specified namespace.  Each line represents a deployment and includes the username of the developer it has been assigned to. The Keycloak service name and auth config status. Most importantly users will need their Access URL which they will add to the IDE when creating a connection.  Use the -n flag to target a specific namespace e.g. `-n codewind`
+The `kubectl get codewinds` command lists all the running Codewind deployments in the specified namespace.  Each line represents a deployment and includes the username of the developer it has been assigned to. The Keycloak service name and auth config status. Most importantly users will need their Access URL which they will add to the IDE when creating a connection.  Use the -n flag to target a specific namespace, for example: `-n codewind`
 
 Note:
 
@@ -335,10 +335,15 @@ If the user was assigned a temporary password, they will need to login to Codewi
 3. follow the prompts to change the password
 4. proceed with setting up the IDE connection using the newly changed password
 
+## Removing a Codewind deployment
+
+To remove a Codewind deployment, enter the following command where `<name>` is the name of the deployment: 
+
+`$ kubectl delete codewinds <name> -n codewind`
 
 ## Building the Operator
 
-To build the operator container image from source moved the cloned repo into your go directory eg:
+To build the operator container image from source, move the cloned repo into your go directory, for example:
 
 ```
 ~/go/src/github.com/eclipse/codewind-operator
@@ -358,4 +363,3 @@ $ docker push {yourDockerRegistry}/codewind-operator:latest
 ```
 
 Before deploying the operator with any changes, modify the image field listed in the file `./deploy/operator.yaml` setting it to the location of your built and pushed operator image.
-
