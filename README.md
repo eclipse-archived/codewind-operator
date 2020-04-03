@@ -335,9 +335,9 @@ If the user was assigned a temporary password, they will need to login to Codewi
 3. follow the prompts to change the password
 4. proceed with setting up the IDE connection using the newly changed password
 
-## Removing a Codewind deployment
+## Removing a Codewind instance
 
-To remove a Codewind deployment, enter the following command where `<name>` is the name of the deployment: 
+To remove a Codewind instance, enter the following command where `<name>` is the name of the instance: 
 
 `$ kubectl delete codewinds <name> -n codewind`
 
