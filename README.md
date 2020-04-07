@@ -105,9 +105,9 @@ kubectl get pods -n codewind
 
 The `codewind-operator` pod runs and is ready for work.
 
-## PersistentStorage requirements
+## Persistent storage requirements
 
-Keycloak and Codewind pods have storage requirements. Both require available PersistentStorage to be configured and available before you attempt to deploy each service.
+Keycloak and Codewind pods have storage requirements. Both require available `PersistentStorage` to be configured and available before you attempt to deploy each service.
 
 Each Keycloak instance requires by default:
 
