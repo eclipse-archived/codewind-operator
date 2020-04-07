@@ -332,13 +332,12 @@ spec:
   storageSize: 10Gi
 ```
 
-Note:
-
-- the `name` field is the name of the deployment and must be unique within the cluster. It should contain numbers and letters only (no spaces or punctuation)
-- the `keycloakDeployment` field is the name of the keycloak instance that will provide authentication services. Keycloak must have already been provisioned and be running.
-- the `username` field is the keycloak registered user who will own this Codewind instance. (alpha numeric characters only)
-- the `loglevel` can be used to increase log levels of the Codewind pods. allowed values one of either: error, warn, info, debug or trace
-- the `storageSize` field sets the PVC size to 10GB (ensure there is a Persistent Volume available to service this storage request)
+**Note:**
+- The **name** field is the name of the deployment and must be unique within the cluster. It should contain numbers and letters only, no spaces or punctuation.
+- The **keycloakDeployment** field is the name of the Keycloak instance that provides authentication services. Keycloak must have already been provisioned and be running.
+- The **username** field is the Keycloak registered user who will own this Codewind instance. Use alphanumeric characters only.
+- The **loglevel** can be used to increase log levels of the Codewind pods. Allowed values one of either **error**, **warn**, **info**, **debug** or **trace**.
+- The **storageSize** field sets the PVC size to 10GB.
 
 Apply this yaml and have the operator create and configure both Codewind and Keycloak with one command:
 
