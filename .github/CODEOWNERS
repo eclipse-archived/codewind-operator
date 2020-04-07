@@ -1,0 +1,11 @@
+# Global owners
+* @tobespc @markcor11
+
+# APIs
+/pkg/apis/** @tobespc @markcor11
+
+# Controllers
+/pkg/controller/** @tobespc @markcor11
+
+# Security
+/pkg/security/** @tobespc @markcor11
