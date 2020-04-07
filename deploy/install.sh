@@ -1,5 +1,5 @@
 #!/bin/bash
-
+ 
 # Globals
 ACTION=$1
 FLG_INGRESS_DOMAIN=""
@@ -68,6 +68,29 @@ function installOperator() {
     echo "Reading Keycloak deployments"
     kubectl get keycloaks -n codewind
 
+    containerRunning=false
+    lastContainerStatus="unknown"
+
+    echo "Waiting for keycloak (may take a few minutes Pending->ContainerCreating->Running)"
+    while [ $containerRunning != true ]
+    do
+      containerStatus=$(kubectl get pods -n codewind | grep keycloak | awk '{print $3}')
+
+      if [[ $lastContainerStatus != $containerStatus ]]
+      then
+        echo 'keycloak ' $containerStatus
+        lastContainerStatus=$containerStatus
+      fi
+
+      if [[ $containerStatus == "Running" ]] 
+      then
+        containerRunning=true 
+      else
+        sleep 5
+      fi 
+    done
+    echo ""
+    kubectl get keycloaks -n codewind
 }
 
 function installCodewind() {
@@ -106,6 +129,29 @@ function installCodewind() {
     echo "Check status using the command 'kubectl get codewinds'"
     echo ""
     echo ""
+ 
+    containerRunning=false
+    lastContainerStatus="unknown"
+    pfeName="codewind-pfe-"$FLG_CW_NAME
+    echo "Waiting for codewind (may take a few minutes Pending->ContainerCreating->Running)"
+    while [ $containerRunning != true ]
+    do
+       containerStatus=$(kubectl get pods -n codewind | grep $pfeName | awk '{print $3}')
+       if [[ $lastContainerStatus != $containerStatus ]]
+       then
+         echo 'codewind ' $containerStatus
+         lastContainerStatus=$containerStatus
+       fi
+
+       if [[ $containerStatus == "Running" ]] 
+       then
+         containerRunning=true 
+       else
+         sleep 5
+       fi 
+    done
+    echo ""
+    kubectl get codewinds -n codewind
     exit
 }
 
@@ -130,3 +176,4 @@ case "$ACTION" in
     'codewind')
         installCodewind ;;
 esac
+
