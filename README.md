@@ -105,23 +105,23 @@ kubectl get pods -n codewind
 
 The `codewind-operator` pod runs and is ready for work.
 
-## Persistent storage requirements
+## PersistentStorage requirements
 
 Keycloak and Codewind pods have storage requirements. Both require available PersistentStorage to be configured and available before you attempt to deploy each service.
 
 Each Keycloak instance requires by default:
 
 - 1Gi capacity
-- access mode of RWO (ReadWriteOnly)
+- Access mode of RWO (ReadWriteOnly)
 
 Each Codewind instance requires by default:
 
 - 10Gi capacity
-- access mode of RWX (ReadWriteMany)
+- Access mode of RWX (ReadWriteMany)
 
-Before continuing, ensure your cluster has the necessary `Persistent Volume` entries available for claiming. If your cluster is not using dynamically assigned storage, you can check the available status by using the command : `kubectl get pv`
+Before continuing, ensure your cluster has the necessary `Persistent Volume` entries available for claiming. If your cluster is not using dynamically assigned storage, you can check the available status by using the command: `kubectl get pv`
 
-In this example there are three Persistent Volumes available one sized 1Gi (mode RWO) and two sized 10Gi (mode RWX) which will allow for one new Keycloak and two new Codewind deployments.
+In this example there are three Persistent Volumes available, one sized 1Gi (mode RWO) and two sized 10Gi (mode RWX), which will allow for one new Keycloak and two new Codewind deployments.
 
 ```
 $ kubectl get pv
@@ -133,7 +133,7 @@ pv003              10Gi       RWX            Recycle          Available
 
 If you do not have sufficient PV availability and your cluster is not configured for dynamic storage, work with your cluster administrator to configure and register additional storage volumes.
 
-If storage is not available, neither Keycloak nor Codewind will be able to start and will remain in a "pending" state.
+If storage is not available neither Keycloak nor Codewind can start and will remain in `Pending` state.
 
 ## Creating an initial Keycloak service
 
@@ -316,12 +316,16 @@ spec:
 ```
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 58227d0... Resolve merge conflicts
 **Note:**
 - The **name** field is the name of the deployment and must be unique within the cluster. It should contain numbers and letters only, no spaces or punctuation.
 - The **keycloakDeployment** field is the name of the Keycloak instance that provides authentication services. Keycloak must have already been provisioned and be running.
 - The **username** field is the Keycloak registered user who will own this Codewind instance. Use alphanumeric characters only.
 - The **loglevel** can be used to increase log levels of the Codewind pods. Allowed values one of either **error**, **warn**, **info**, **debug** or **trace**.
 - The **storageSize** field sets the PVC size to 10GB.
+<<<<<<< HEAD
 =======
 Note:
 
@@ -330,10 +334,15 @@ Note:
 - the `username` field is the keycloak registered user who will own this Codewind instance. (alpha numeric characters only)
 - the `loglevel` can be used to increase log levels of the Codewind pods. allowed values one of either: error, warn, info, debug or trace
 - the `storageSize` field sets the PVC size to 10GB (ensure there is a Persistent Volume available to service this storage request)
+=======
+>>>>>>> 58227d0... Resolve merge conflicts
 
+<<<<<<< HEAD
 Apply this yaml and have the operator create and configure both Codewind and Keycloak with one command:
 >>>>>>> 4ae61b2... Storage requirements
 
+=======
+>>>>>>> 255e723... Resolve merge conflicts
 Apply this `yaml` and have the operator create and configure both Codewind and Keycloak with one command:
 ```
 $ kubectl apply -f ./deploy/crds/codewind.eclipse.org_v1alpha1_codewind_cr.yaml
