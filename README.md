@@ -105,6 +105,36 @@ kubectl get pods -n codewind
 
 The `codewind-operator` pod runs and is ready for work.
 
+## Persistent storage requirements
+
+Keycloak and Codewind pods have storage requirements. Both require available `PersistentStorage` to be configured and available before you attempt to deploy each service.
+
+Each Keycloak instance requires by default:
+
+- 1Gi capacity
+- Access mode of RWO (ReadWriteOnly)
+
+Each Codewind instance requires by default:
+
+- 10Gi capacity
+- Access mode of RWX (ReadWriteMany)
+
+Before continuing, ensure your cluster has the necessary `Persistent Volume` entries available for claiming. If your cluster is not using dynamically assigned storage, you can check the available status by using the command: `kubectl get pv`
+
+In this example there are three Persistent Volumes available, one sized 1Gi (mode RWO) and two sized 10Gi (mode RWX), which will allow for one new Keycloak and two new Codewind deployments.
+
+```
+$ kubectl get pv
+NAME               CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS
+pv001              1Gi        RWO            Recycle          Available
+pv002              10Gi       RWX            Recycle          Available
+pv003              10Gi       RWX            Recycle          Available
+```
+
+If you do not have sufficient PV availability and your cluster is not configured for dynamic storage, work with your cluster administrator to configure and register additional storage volumes.
+
+If storage is not available neither Keycloak nor Codewind can start and will remain in `Pending` state.
+
 ## Creating an initial Keycloak service
 
 Keycloak is deployed and set up using the operator.
