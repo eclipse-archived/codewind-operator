@@ -62,10 +62,10 @@ function installOperator() {
     echo "Deploying Codewind operator:"
     kubectl create -f ./operator.yaml
 
-    echo "Requesting a new Keycloak service"
+    echo "Requesting a new Keycloak service:"
     kubectl create -f ./crds/codewind.eclipse.org_v1alpha1_keycloak_cr.yaml
 
-    echo "Reading Keycloak deployments"
+    echo "Reading Keycloak deployments:"
     kubectl get keycloaks -n codewind
 
 }
@@ -97,7 +97,6 @@ function installCodewind() {
     exit
     fi
 
-    echo "Creating Codewind deployment"
     cp ./crds/codewind.eclipse.org_v1alpha1_codewind_cr.yaml ./custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
     sed -i "" "s|name: jane1|name: $FLG_CW_NAME|g" ./custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
     sed -i "" "s|username: jane|username: $FLG_CW_USERNAME|g" ./custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
