@@ -150,6 +150,7 @@ function installCodewind() {
     echo "  keycloakDeployment: devex001"  >> custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
     echo "  username: "$FLG_CW_USERNAME >> custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
     tail -n2 codewind.eclipse.org_v1alpha1_codewind_cr.yaml >> custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml 
+
     kubectl create -f custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
     rm -f custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
     cd ..
