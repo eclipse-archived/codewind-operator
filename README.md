@@ -32,7 +32,15 @@ Run the `install.sh operator` command with options:
 - **-i** {yourClusterIngressDomain} sets the ingress domain of your cluster
 - **-o** Use the `-o` option if you are deploying the operator into an Openshift 3.11.x cluster
 
-for example:
+The Ingress domain is appended to any routes and URLs created by the operator. The ingress must already be registered in your DNS service and resolves correctly from both inside and outside of the cluster.
+
+**Ingress Note 1:** If you are installing into a hosted cloud platform, the ingress domain is usually displayed on your cloud service dashboard.
+
+**Ingress Note 2:** If you are installing into IBM Cloud and using an Openshift 3.11 cluster you can find the ingress domain using the command: `ibmcloud ks nlb-dns`
+The Ingress domain exposed to the Openshift Router will contain 0001 (rather than the default 0000) and appear similar to: `{yourclustername}-{uniqueid}-0001.{yourzone}.containers.appdomain.cloud`
+
+
+Installation example:
 
 ```bash
 $ ./install.sh -i 10.98.117.7.nip.io
@@ -153,7 +161,9 @@ Modify this file and set the `ingressDomain` value to one specific to your clust
 
 The Ingress domain is appended to any routes and URLs created by the operator. The ingress must already be registered in your DNS service and resolves correctly from both inside and outside of the cluster.
 
-**Note:** If you are installing into a hosted cloud platform, the ingress domain is usually displayed on your cloud service dashboard.
+**Ingress Note 1:** If you are installing into a hosted cloud platform, the ingress domain is usually displayed on your cloud service dashboard.
+
+**Ingress Note 2:** If you are installing into IBM Cloud and using an Openshift 3.11 cluster you can find the ingress domain using the command: `ibmcloud ks nlb-dns` The Ingress domain exposed to the Openshift Router will contain 0001 (rather than the default 0000) and appear similar to: `{yourclustername}-{uniqueid}-0001.{yourzone}.containers.appdomain.cloud`
 
 An example `configmap` file:
 
