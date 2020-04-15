@@ -27,31 +27,31 @@ const (
 
 const (
 	// VersionNum : Operator version number
-	VersionNum = "0.11.0"
+	VersionNum = "0.0.1"
 
 	// KeycloakImage is the docker image that will be used in the Codewind-Keycloak pod
 	KeycloakImage = "eclipse/codewind-keycloak-amd64"
 
 	// KeycloakImageTag is the Image tag used by Keycloak
-	KeycloakImageTag = "0.10.0"
+	KeycloakImageTag = "0.11.0"
 
 	// CodewindImage is the docker image that will be used in the Codewind-pfe pod
 	CodewindImage = "eclipse/codewind-pfe-amd64"
 
 	// CodewindImageTag is the Image tag used by Codewind
-	CodewindImageTag = "0.10.0"
+	CodewindImageTag = "0.11.0"
 
 	// CodewindPerformanceImage is the docker image that will be used in the Codewind-Performance pod
 	CodewindPerformanceImage = "eclipse/codewind-performance-amd64"
 
 	// CodewindPerformanceImageTag is the Image tag used by Codewind
-	CodewindPerformanceImageTag = "0.10.0"
+	CodewindPerformanceImageTag = "0.11.0"
 
 	// CodewindGatekeeperImage is the docker image that will be used in the Codewind-Gatekeeper pod
 	CodewindGatekeeperImage = "eclipse/codewind-gatekeeper-amd64"
 
 	// CodewindGatekeeperImageTag is the Image tag used by Codewind
-	CodewindGatekeeperImageTag = "0.10.0"
+	CodewindGatekeeperImageTag = "0.11.0"
 
 	// CodewindAuthRealm : Codewind security realm within Keycloak
 	CodewindAuthRealm = "codewind"
