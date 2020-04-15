@@ -24,7 +24,7 @@ $ cd {path to cloned codewind-operator}/deploy
 Make the `install.sh` executable:
 
 ```bash
-chomd +x ./install.sh
+chmod +x ./install.sh
 ````
 
 Run the `install.sh operator` command with options:
@@ -36,8 +36,9 @@ The Ingress domain is appended to any routes and URLs created by the operator. T
 
 **Ingress Note 1:** If you are installing into a hosted cloud platform, the ingress domain is usually displayed on your cloud service dashboard.
 
-**Ingress Note 2:** If you are installing into IBM Cloud and using an Openshift 3.11 cluster you can find the ingress domain using the command: `ibmcloud ks nlb-dns`
-The Ingress domain exposed to the Openshift Router will contain 0001 (rather than the default 0000) and appear similar to: `{yourclustername}-{uniqueid}-0001.{yourzone}.containers.appdomain.cloud`
+**Ingress Note 2:** If you are installing into IBM Cloud and using an Openshift 3.11 cluster you can find the ingress domain using the command: `ibmcloud ks nlb-dns ls -c {yourClusterName}` The Ingress domain exposed to the Openshift Router have a hostname containing -0001 (rather than the default -0000) and appear similar to: 
+
+`{yourClusterName}-{uniqueid}-0001.{yourzone}.containers.appdomain.cloud`
 
 
 Installation example:
@@ -163,7 +164,9 @@ The Ingress domain is appended to any routes and URLs created by the operator. T
 
 **Ingress Note 1:** If you are installing into a hosted cloud platform, the ingress domain is usually displayed on your cloud service dashboard.
 
-**Ingress Note 2:** If you are installing into IBM Cloud and using an Openshift 3.11 cluster you can find the ingress domain using the command: `ibmcloud ks nlb-dns` The Ingress domain exposed to the Openshift Router will contain 0001 (rather than the default 0000) and appear similar to: `{yourclustername}-{uniqueid}-0001.{yourzone}.containers.appdomain.cloud`
+**Ingress Note 2:** If you are installing into IBM Cloud and using an Openshift 3.11 cluster you can find the ingress domain using the command: `ibmcloud ks nlb-dns ls -c {yourClusterName}` The Ingress domain exposed to the Openshift Router have a hostname containing -0001 (rather than the default -0000) and appear similar to:
+
+`{yourClusterName}-{uniqueid}-0001.{yourzone}.containers.appdomain.cloud`
 
 An example `configmap` file:
 
