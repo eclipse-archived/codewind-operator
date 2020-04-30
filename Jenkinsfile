@@ -137,10 +137,24 @@ spec:
                                 if [ "$GIT_BRANCH" = "master" ]; then
                                     TAG="latest"
                                 fi
+
+                                echo "Publish Eclipse Codewind operator $TAG"
+
                                 docker tag eclipse/codewind-operator-amd64:latest eclipse/codewind-operator-amd64:$TAG
                                 docker push eclipse/codewind-operator-amd64:$TAG
-                            fi
 
+                                if [[ $GIT_BRANCH =~ ^([0-9]+\\.[0-9]+) ]]; then
+                                    IFS='.' # set '.' as delimiter
+                                    read -ra TOKENS <<< "$GIT_BRANCH"    
+                                    IFS=' ' # reset delimiter
+                                    export TAG_CUMULATIVE=${TOKENS[0]}.${TOKENS[1]}
+
+                                    echo "Publish Eclipse Codewind operator $TAG_CUMULATIVE"
+                                    
+                                    docker tag eclipse/codewind-operator-amd64:latest eclipse/codewind-operator-amd64:$TAG_CUMULATIVE
+                                    docker push eclipse/codewind-operator-amd64:$TAG_CUMULATIVE                          
+                                fi
+                            fi
                         '''
                     }
                 }
