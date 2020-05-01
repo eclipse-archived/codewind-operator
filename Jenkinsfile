@@ -122,7 +122,7 @@ spec:
                 withDockerRegistry([url: 'https://index.docker.io/v1/', credentialsId: 'docker.com-bot']) {
                     unstash "operator-binary"
                     script {
-                        sh '''
+                        sh '''#!/usr/bin/env bash
                             set -x
                             # Just check the operator binary is still there.
                             ls -lrt codewind-operator
@@ -132,15 +132,29 @@ spec:
                             docker build -f build/Dockerfile -t eclipse/codewind-operator-amd64:latest .
 
                             # If CHANGE_TARGET is set then this is a PR so don't push to master.
-                            if [ -z "$CHANGE_TARGET" ]; then
+                            if [[ -z "$CHANGE_TARGET" ]]; then
                                 export TAG=$GIT_BRANCH
-                                if [ "$GIT_BRANCH" = "master" ]; then
+                                if [[ "$GIT_BRANCH" = "master" ]]; then
                                     TAG="latest"
                                 fi
+
+                                echo "Publish Eclipse Codewind operator $TAG"
+
                                 docker tag eclipse/codewind-operator-amd64:latest eclipse/codewind-operator-amd64:$TAG
                                 docker push eclipse/codewind-operator-amd64:$TAG
-                            fi
 
+                                if [[ $GIT_BRANCH =~ ^([0-9]+\\.[0-9]+) ]]; then
+                                    IFS='.' # set '.' as delimiter
+                                    read -ra TOKENS <<< "$GIT_BRANCH"
+                                    IFS=' ' # reset delimiter
+                                    export TAG_CUMULATIVE=${TOKENS[0]}.${TOKENS[1]}
+
+                                    echo "Publish Eclipse Codewind operator $TAG_CUMULATIVE"
+
+                                    docker tag eclipse/codewind-operator-amd64:latest eclipse/codewind-operator-amd64:$TAG_CUMULATIVE
+                                    docker push eclipse/codewind-operator-amd64:$TAG_CUMULATIVE
+                                fi
+                            fi
                         '''
                     }
                 }
