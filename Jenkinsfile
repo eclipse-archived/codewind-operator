@@ -122,7 +122,7 @@ spec:
                 withDockerRegistry([url: 'https://index.docker.io/v1/', credentialsId: 'docker.com-bot']) {
                     unstash "operator-binary"
                     script {
-                        sh '''
+                        sh '''#!/usr/bin/env bash
                             set -x
                             # Just check the operator binary is still there.
                             ls -lrt codewind-operator
@@ -132,9 +132,9 @@ spec:
                             docker build -f build/Dockerfile -t eclipse/codewind-operator-amd64:latest .
 
                             # If CHANGE_TARGET is set then this is a PR so don't push to master.
-                            if [ -z "$CHANGE_TARGET" ]; then
+                            if [[ -z "$CHANGE_TARGET" ]]; then
                                 export TAG=$GIT_BRANCH
-                                if [ "$GIT_BRANCH" = "master" ]; then
+                                if [[ "$GIT_BRANCH" = "master" ]]; then
                                     TAG="latest"
                                 fi
 
