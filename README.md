@@ -44,7 +44,7 @@ The Ingress domain is appended to any routes and URLs created by the operator. T
 Installation example:
 
 ```bash
-$ ./install.sh -i 10.98.117.7.nip.io
+$ ./install.sh operator -i 10.98.117.7.nip.io
 
 ############################
 Codewind Operator install.sh
@@ -412,7 +412,7 @@ Run the `install.sh codewind` command with options:
 for example:
 
 ```bash
-$ ./install.sh -n jane1 -u jane
+$ ./install.sh codewind -n jane1 -u jane
 
 ➜  deploy git:(master) ✗ ./install.sh codewind -n jane1 -u jane
 ############################
