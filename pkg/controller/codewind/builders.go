@@ -93,6 +93,7 @@ func (r *ReconcileCodewind) deploymentForCodewindPerformance(codewind *codewindv
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      defaults.PrefixCodewindPerformance + "-" + deploymentOptions.WorkspaceID,
 			Namespace: codewind.Namespace,
+			Labels:    ls,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
@@ -173,6 +174,7 @@ func (r *ReconcileCodewind) deploymentForCodewindPFE(codewind *codewindv1alpha1.
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      deploymentOptions.CodewindPFEDeploymentName,
 			Namespace: codewind.Namespace,
+			Labels:    ls,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
@@ -374,6 +376,7 @@ func (r *ReconcileCodewind) deploymentForCodewindGatekeeper(codewind *codewindv1
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      defaults.PrefixCodewindGatekeeper + "-" + deploymentOptions.WorkspaceID,
 			Namespace: codewind.Namespace,
+			Labels:    ls,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,

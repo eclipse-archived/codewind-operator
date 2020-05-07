@@ -163,6 +163,7 @@ func (r *ReconcileKeycloak) deploymentForKeycloak(keycloak *codewindv1alpha1.Key
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      deploymentOptions.KeycloakDeploymentName,
 			Namespace: keycloak.Namespace,
+			Labels:    ls,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
