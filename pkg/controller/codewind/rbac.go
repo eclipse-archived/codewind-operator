@@ -26,7 +26,7 @@ func (r *ReconcileCodewind) clusterRolesForCodewind(codewind *codewindv1alpha1.C
 			APIGroups:     []string{"security.openshift.io"},
 			Resources:     []string{"securitycontextconstraints"},
 			Verbs:         []string{"use"},
-			ResourceNames: []string{"privileged"},
+			ResourceNames: []string{"privileged", "anyuid"},
 		},
 		rbacv1.PolicyRule{
 			APIGroups: []string{"extensions", ""},
