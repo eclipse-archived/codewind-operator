@@ -26,8 +26,8 @@ const (
 )
 
 const (
-	// VersionNum : Operator version number
-	VersionNum = "0.12.0"
+	// VersionNum : Operator Version number
+	VersionNum = "0.12.0" //
 
 	// KeycloakImage is the docker image that will be used in the Codewind-Keycloak pod
 	KeycloakImage = "eclipse/codewind-keycloak-amd64"
