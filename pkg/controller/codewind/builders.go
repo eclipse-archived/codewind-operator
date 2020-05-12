@@ -302,6 +302,7 @@ func (r *ReconcileCodewind) serviceForCodewindPFE(codewind *codewindv1alpha1.Cod
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      deploymentOptions.CodewindPFEServiceName,
 			Namespace: codewind.Namespace,
+			Labels:    ls,
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: ls,
@@ -325,6 +326,7 @@ func (r *ReconcileCodewind) serviceForCodewindPerformance(codewind *codewindv1al
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      deploymentOptions.CodewindPerformanceServiceName,
 			Namespace: codewind.Namespace,
+			Labels:    ls,
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: ls,
@@ -348,6 +350,7 @@ func (r *ReconcileCodewind) serviceForCodewindGatekeeper(codewind *codewindv1alp
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      deploymentOptions.CodewindGatekeeperServiceName,
 			Namespace: codewind.Namespace,
+			Labels:    ls,
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: ls,
