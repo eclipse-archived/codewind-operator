@@ -392,10 +392,23 @@ func (r *ReconcileCodewind) deploymentForCodewindGatekeeper(codewind *codewindv1
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: deploymentOptions.CodewindServiceAccountName,
+					Volumes: []corev1.Volume{{
+						Name: "tls-certs",
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: deploymentOptions.CodewindGatekeeperSecretTLSName,
+							},
+						},
+					}},
 					Containers: []corev1.Container{{
 						Name:            defaults.PrefixCodewindGatekeeper,
 						Image:           defaults.CodewindGatekeeperImage + ":" + defaults.CodewindGatekeeperImageTag,
 						ImagePullPolicy: corev1.PullAlways,
+						VolumeMounts: []corev1.VolumeMount{{
+							MountPath: "/tlscerts",
+							Name:      "tls-certs",
+							ReadOnly:  true,
+						}},
 						Env: []corev1.EnvVar{
 							{
 								Name:  "AUTH_URL",

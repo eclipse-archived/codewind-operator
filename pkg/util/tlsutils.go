@@ -30,12 +30,12 @@ func GenerateCertificate(dnsName string, certTitle string) (string, string, erro
 	var log = logf.Log.WithName("controller_codewind_tlsutils.go")
 
 	template := x509.Certificate{
-		SerialNumber: big.NewInt(1),
+		SerialNumber: big.NewInt(time.Now().UnixNano() / 1000000),
 		Subject: pkix.Name{
 			Organization: []string{certTitle},
 		},
 		NotBefore:             time.Now(),
-		NotAfter:              time.Now().Add(time.Hour * 24 * 180),
+		NotAfter:              time.Now().Add(time.Hour * 24 * 730),
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
