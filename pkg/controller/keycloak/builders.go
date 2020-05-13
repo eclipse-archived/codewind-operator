@@ -138,6 +138,7 @@ func (r *ReconcileKeycloak) serviceForKeycloak(keycloak *codewindv1alpha1.Keyclo
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
 			Namespace: keycloak.Namespace,
+			Labels:    ls,
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: ls,
