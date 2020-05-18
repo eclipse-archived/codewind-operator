@@ -74,7 +74,7 @@ func SecRealmGet(httpClient util.HTTPClient, keycloakConfig *KeycloakConfigurati
 // SecRealmCreate : Create a new realm in Keycloak
 func SecRealmCreate(httpClient util.HTTPClient, keycloakConfig *KeycloakConfiguration, accessToken string) *SecError {
 
-	themeToUse, secErr := GetSuggestedTheme(keycloakConfig.AuthURL, accessToken)
+	themeLoginName, themeAccountName, secErr := GetSuggestedThemes(keycloakConfig.AuthURL, accessToken)
 	if secErr != nil {
 		return secErr
 	}
@@ -88,6 +88,7 @@ func SecRealmCreate(httpClient util.HTTPClient, keycloakConfig *KeycloakConfigur
 		DisplayName           string `json:"displayName"`
 		Enabled               bool   `json:"enabled"`
 		LoginTheme            string `json:"loginTheme"`
+		AccountTheme          string `json:"accountTheme"`
 		AccessTokenLifespan   int    `json:"accessTokenLifespan"`
 		SSOSessionIdleTimeout int    `json:"ssoSessionIdleTimeout"`
 		SSOSessionMaxLifespan int    `json:"ssoSessionMaxLifespan"`
@@ -96,7 +97,8 @@ func SecRealmCreate(httpClient util.HTTPClient, keycloakConfig *KeycloakConfigur
 		Realm:                 keycloakConfig.RealmName,
 		DisplayName:           keycloakConfig.RealmName,
 		Enabled:               true,
-		LoginTheme:            themeToUse,
+		LoginTheme:            themeLoginName,
+		AccountTheme:          themeAccountName,
 		AccessTokenLifespan:   (1 * 24 * 60 * 60), // access tokens last 1 day
 		SSOSessionIdleTimeout: (5 * 24 * 60 * 60), // refresh tokens last 5 days
 		SSOSessionMaxLifespan: (5 * 24 * 60 * 60), // refresh tokens last 5 days
