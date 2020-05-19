@@ -135,7 +135,6 @@ function installCodewind() {
     exit
     fi
 
-    echo "Creating Codewind deployment"
     cd crds
 #    cp codewind.eclipse.org_v1alpha1_codewind_cr.yaml custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
 #   sed -i "" "s|name: jane1|name: $FLG_CW_NAME|g" custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
@@ -153,14 +152,12 @@ function installCodewind() {
     kubectl create -f custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
     rm -f custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
     cd ..
-    echo "Check status using the command 'kubectl get codewinds'"
-    echo ""
     echo ""
  
     containerRunning=false
     lastContainerStatus="unknown"
     pfeName="codewind-pfe-"$FLG_CW_NAME
-    echo "Waiting for codewind (may take a few minutes Pending->ContainerCreating->Running)"
+    echo "Waiting for codewind (may take a few minutes, expected phases: Pending->ContainerCreating->Running)"
     while [ $containerRunning != true ]
     do
        containerStatus=$(kubectl get pods -n codewind | grep $pfeName | awk '{print $3}')
