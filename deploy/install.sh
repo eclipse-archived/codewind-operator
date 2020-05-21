@@ -1,5 +1,5 @@
 #!/bin/bash
- 
+
 # Globals
 ACTION=$1
 FLG_INGRESS_DOMAIN=""
@@ -7,16 +7,56 @@ FLG_OC311=false
 FLG_CW_USERNAME=""
 FLG_CW_NAME=""
 
+function helpOperatorFlags() {
+  echo "  flags for 'operator' command:"
+  echo "    -i                   ingress domain eg 172.15.41.1.nip.io"
+  echo "    -o                   use when deploying the operator into an Openshift 3.11.x cluster"
+}
+
+function helpCodewindFlags() {
+  echo "  flags for 'codewind' command:"
+  echo "    -u                   registered username"
+  echo "    -n                   name of new Codewind deployment"
+}
+
+function showHelp() {
+
+  echo "NAME:"
+  echo "   install.sh - deploys the codewind-operator or a new Codewind instance"
+  echo ""
+  echo "USAGE:"
+  echo "   install.sh command [flags]"
+  echo ""
+  echo "COMMANDS:"
+  echo "   operator              deploys the codewind-operator into the cluster"
+  echo "   codewind              creates a new Codewind deployment in the cluster"
+  echo ""
+  echo "FLAGS:"
+
+  helpOperatorFlags
+  echo ""
+  helpCodewindFlags
+  echo ""
+  echo "EXAMPLES:"
+  echo "   install.sh operator -i 172.51.22.43.nip.io"
+  echo "   install.sh codewind -n myinstance -u myaccount"
+  echo ""
+}
+
 function installOperator() {
     echo ""
-    echo "########################"
-    echo "   Codewind Operator"
-    echo "########################"
+    echo "--------------------------------"
+    echo "New Codewind-Operator deployment"
+    echo "--------------------------------"
     echo ""
 
     if [ -z $FLG_INGRESS_DOMAIN ]
     then
-      echo "When installing the Codewind-Operator you must supply an ingress domain using the -i option"
+      echo ""
+      echo "REQUIRED FLAG: When installing the Codewind-Operator you must supply an ingress domain using the -i option."
+      echo ""
+      helpOperatorFlags
+      echo ""
       exit
     fi
 
@@ -54,7 +94,7 @@ function installOperator() {
     kubectl create -f codewind.eclipse.org_codewinds_crd.yaml
     fi
 
-    cd ..    
+    cd ..
 
     echo "Creating Codewind configmap:"
     #cp codewind-configmap.yaml custom-codewind-configmap.yaml
@@ -102,26 +142,34 @@ function installOperator() {
         containerRunning=true 
       else
         sleep 5
-      fi 
+      fi
     done
     echo ""
     kubectl get keycloaks -n codewind
 }
 
 function installCodewind() {
-    echo "----------------------------------"
-    echo "Install a new Codewind deployment"
-    echo "----------------------------------"
+    echo "-----------------------"
+    echo "New Codewind deployment"
+    echo "-----------------------"
 
    if [[ -z $FLG_CW_NAME ]]
    then
-    echo "When installing a new Codewind deployment you must supply a unique name with the -n option"
+    echo ""
+    echo "REQUIRED FLAG: When installing a new Codewind deployment you must supply a unique name with the -n option"
+    echo ""
+    helpCodewindFlags
+    echo ""
     exit
    fi
 
    if [[ -z $FLG_CW_USERNAME ]]
    then
-    echo "When installing the Codewind deployment you must supply a registered username with the -u option"
+    echo ""
+    echo "REQUIRED FLAG: When installing the Codewind deployment you must supply a registered username with the -u option"
+    echo ""
+    helpCodewindFlags
+    echo ""
     exit
    fi
 
@@ -136,9 +184,6 @@ function installCodewind() {
     fi
 
     cd crds
-#    cp codewind.eclipse.org_v1alpha1_codewind_cr.yaml custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
-#   sed -i "" "s|name: jane1|name: $FLG_CW_NAME|g" custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
-#   sed -i "" "s|username: jane|username: $FLG_CW_USERNAME|g" custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
 
 # updated as sed not available on Windows
 
@@ -153,7 +198,7 @@ function installCodewind() {
     rm -f custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
     cd ..
     echo ""
- 
+
     containerRunning=false
     lastContainerStatus="unknown"
     pfeName="codewind-pfe-"$FLG_CW_NAME
@@ -163,25 +208,24 @@ function installCodewind() {
        containerStatus=$(kubectl get pods -n codewind | grep $pfeName | awk '{print $3}')
        if [[ $lastContainerStatus != $containerStatus ]]
        then
-         echo 'codewind ' $containerStatus
+         echo 'codewind: ' $containerStatus
          lastContainerStatus=$containerStatus
        fi
 
-       if [[ $containerStatus == "Running" ]] 
+       if [[ $containerStatus == "Running" ]]
        then
-         containerRunning=true 
+         containerRunning=true
        else
          sleep 5
-       fi 
+       fi
     done
+    
     echo ""
-    kubectl get codewinds -n codewind
+    kubectl get codewinds $FLG_CW_NAME -n codewind
     exit
 }
 
-echo "############################"
-echo "Codewind Operator install.sh"
-echo "############################"
+echo ""
 
 shift $(($OPTIND))
 while getopts 'n:u:i:o' cmd
@@ -199,5 +243,7 @@ case "$ACTION" in
         installOperator ;;
     'codewind')
         installCodewind ;;
+    *)
+        showHelp ;;
 esac
 
