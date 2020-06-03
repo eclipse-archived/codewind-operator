@@ -69,6 +69,3 @@ func GetOperatorNamespace() string {
 	}
 	return operatorNamespace
 }
-
-
-

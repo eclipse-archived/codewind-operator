@@ -77,6 +77,12 @@ const (
 	// CodewindTektonClusterRolesName : Tekton, cluster role
 	CodewindTektonClusterRolesName = "codewind-tekton"
 
+	// CodewindODOClusterRoleBindingName : ODO, cluster role binding
+	CodewindODOClusterRoleBindingName = "codewind-odo-rolebinding"
+
+	// CodewindODOClusterRolesName : ODO, cluster role
+	CodewindODOClusterRolesName = "codewind-odoclusterrole"
+
 	// CodewindRolesName will include the workspaceID when deployed
 	CodewindRolesName = "eclipse-codewind-" + VersionNum
 )
