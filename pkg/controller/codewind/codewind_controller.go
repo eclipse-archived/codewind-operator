@@ -220,6 +220,23 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		CodewindGatekeeperServiceName:       defaults.PrefixCodewindGatekeeper + "-" + workspaceID,
 	}
 
+	// Check if Codewind is being deleted
+	if !codewind.GetDeletionTimestamp().IsZero() {
+
+		// Perform finalizer clean up, then clear the finalizer, then allow this Codewind CR to be deleted
+		if err := r.handleCodewindCRBFinalizer(codewind, deploymentOptions, reqLogger, request); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		//Stop the reconcile
+		return reconcile.Result{}, nil
+	}
+
+	// Add finalizer to this Codewind CR
+	if err := r.addCodewindFinalizer(reqLogger, codewind, request); err != nil {
+		return reconcile.Result{}, err
+	}
+
 	// Check if the Codewind Cluster roles already exist, if not create new ones
 	clusterRoles := &rbacv1.ClusterRole{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindRolesName, Namespace: ""}, clusterRoles)

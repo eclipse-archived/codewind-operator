@@ -301,5 +301,6 @@ func (r *ReconcileCodewind) roleBindingForCodewindODO(codewind *codewindv1alpha1
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}
+
 	return rolebinding
 }

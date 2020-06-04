@@ -27,7 +27,7 @@ const (
 
 const (
 	// VersionNum : Operator version number
-	VersionNum = "0.0.1"
+	VersionNum = "latest"
 
 	// KeycloakImage is the docker image that will be used in the Codewind-Keycloak pod
 	KeycloakImage = "eclipse/codewind-keycloak-amd64"
@@ -105,4 +105,7 @@ const (
 
 	// OperatorConfigMapName : Codewind operator config map name
 	OperatorConfigMapName = "codewind-operator"
+
+	// CodewindFinalizerName : Codewind Cluster role binding finalizer
+	CodewindFinalizerName = "crb.finalizer.codewind.eclipse"
 )
