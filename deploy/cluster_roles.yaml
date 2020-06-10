@@ -34,7 +34,7 @@ rules:
 
   - apiGroups: [""]
     resources: ["persistentvolumeclaims",persistentvolumeclaims/finalizers,"persistentvolumeclaims/status"]
-    verbs: ["*","get", "list", "watch", "update"]
+    verbs: ["*","create", "delete", "deletecollection", "get", "list", "patch", "watch", "update"]
 
   - apiGroups: [""]
     resources: ["pods"]
@@ -46,7 +46,7 @@ rules:
 
   - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["get", "watch", "list", "create","patch","update", "delete"]
+    verbs: ["get", "watch", "list", "create", "patch","update", "delete", "deletecollection"]
 
   - apiGroups: [""]
     resources: ["serviceaccounts"]
@@ -76,6 +76,10 @@ rules:
     resources: ["replicasets/finalizers"]
     verbs: ["get","list","update","delete"]
 
+  - apiGroups: ["build.openshift.io"]
+    resources: ["buildconfigs"]
+    verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
+
   - apiGroups: ["icp.ibm.com"]
     resources: ["images"]
     verbs: ["get","list","create","watch"]
@@ -96,6 +100,38 @@ rules:
     resources: ["replicasets","replicasets/finalizers"]
     verbs: ["get","list","update","delete"]
 
+  - apiGroups: ["image.openshift.io"]
+    resources: ["images", "imagestreams"]
+    verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
+
+  - apiGroups: ["image.openshift.io"]
+    resources: ["imagesignatures"]
+    verbs: ["create", "delete"]
+
+  - apiGroups: ["image.openshift.io"]
+    resources: ["imagestreamimages"]
+    verbs: ["get"]
+
+  - apiGroups: ["image.openshift.io"]
+    resources: ["imagestreamimports", "imagestreammappings"]
+    verbs: ["create"]
+
+  - apiGroups: ["image.openshift.io"]
+    resources: ["imagestreamtags"]
+    verbs: ["create", "delete", "get", "list", "patch", "update"]
+
+  - apiGroups: ["apps.openshift.io"]
+    resources: ["deploymentconfigs"]
+    verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
+
+  - apiGroups: ["project.openshift.io"]
+    resources: ["projectrequests"]
+    verbs: ["create", "list"]
+
+  - apiGroups: ["project.openshift.io"]
+    resources: ["projects"]
+    verbs: ["create", "delete", "get", "list", "watch", "patch", "update", "watch"]
+
   - apiGroups: ["rbac.authorization.k8s.io"]
     resources: ["clusterroles"]
     verbs: ["get","create","list","patch","watch","delete"]
@@ -114,7 +150,7 @@ rules:
 
   - apiGroups: ["route.openshift.io"]
     resources: ["routes","routes/custom-host"]
-    verbs: ["watch","get","list","create","update","delete","patch"]
+    verbs: ["watch","get","list","create","update","delete","deletecollection","patch"]
 
   - apiGroups: ["security.openshift.io"]
     resources: ["securitycontextconstraints"]

@@ -133,6 +133,87 @@ func (r *ReconcileCodewind) clusterRolesForCodewindTekton(codewind *codewindv1al
 	}
 }
 
+// clusterRolesForCodewindODO : create Codewind ODO cluster roles
+func (r *ReconcileCodewind) clusterRolesForCodewindODO(codewind *codewindv1alpha1.Codewind, deploymentOptions DeploymentOptionsCodewind) *rbacv1.ClusterRole {
+	ourRoles := []rbacv1.PolicyRule{
+		rbacv1.PolicyRule{
+			APIGroups: []string{""},
+			Resources: []string{"services"},
+			Verbs:     []string{"get", "list"},
+		},
+		rbacv1.PolicyRule{
+			APIGroups: []string{"route.openshift.io"},
+			Resources: []string{"routes"},
+			Verbs:     []string{"create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"},
+		},
+		rbacv1.PolicyRule{
+			APIGroups: []string{""},
+			Resources: []string{"secrets"},
+			Verbs:     []string{"create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"},
+		},
+		rbacv1.PolicyRule{
+			APIGroups: []string{"build.openshift.io"},
+			Resources: []string{"buildconfigs"},
+			Verbs:     []string{"create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"},
+		},
+		rbacv1.PolicyRule{
+			APIGroups: []string{""},
+			Resources: []string{"persistentvolumeclaims"},
+			Verbs:     []string{"create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"},
+		},
+		rbacv1.PolicyRule{
+			APIGroups: []string{"project.openshift.io"},
+			Resources: []string{"projectrequests"},
+			Verbs:     []string{"create", "list"},
+		},
+		rbacv1.PolicyRule{
+			APIGroups: []string{"project.openshift.io"},
+			Resources: []string{"projects"},
+			Verbs:     []string{"create", "delete", "get", "list", "watch", "patch", "update", "watch"},
+		},
+		rbacv1.PolicyRule{
+			APIGroups: []string{"image.openshift.io"},
+			Resources: []string{"images", "imagestreams"},
+			Verbs:     []string{"create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"},
+		},
+		rbacv1.PolicyRule{
+			APIGroups: []string{"image.openshift.io"},
+			Resources: []string{"imagesignatures"},
+			Verbs:     []string{"create", "delete"},
+		},
+		rbacv1.PolicyRule{
+			APIGroups: []string{"image.openshift.io"},
+			Resources: []string{"imagestreamimages"},
+			Verbs:     []string{"get"},
+		},
+		rbacv1.PolicyRule{
+			APIGroups: []string{"image.openshift.io"},
+			Resources: []string{"imagestreamimports", "imagestreammappings"},
+			Verbs:     []string{"create"},
+		},
+		rbacv1.PolicyRule{
+			APIGroups: []string{"image.openshift.io"},
+			Resources: []string{"imagestreamtags"},
+			Verbs:     []string{"create", "delete", "get", "list", "patch", "update"},
+		},
+		rbacv1.PolicyRule{
+			APIGroups: []string{"apps.openshift.io"},
+			Resources: []string{"deploymentconfigs"},
+			Verbs:     []string{"create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"},
+		},
+	}
+	return &rbacv1.ClusterRole{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1beta1",
+			Kind:       "ClusterRole",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: deploymentOptions.CodewindODOClusterRolesName,
+		},
+		Rules: ourRoles,
+	}
+}
+
 //roleBindingForCodewind : create Codewind role bindings in the deployment namespace
 func (r *ReconcileCodewind) roleBindingForCodewind(codewind *codewindv1alpha1.Codewind, deploymentOptions DeploymentOptionsCodewind) *rbacv1.RoleBinding {
 	labels := labelsForCodewindPFE(deploymentOptions)
@@ -187,6 +268,36 @@ func (r *ReconcileCodewind) roleBindingForCodewindTekton(codewind *codewindv1alp
 		RoleRef: rbacv1.RoleRef{
 			Kind:     "ClusterRole",
 			Name:     deploymentOptions.CodewindTektonClusterRolesName,
+			APIGroup: "rbac.authorization.k8s.io",
+		},
+	}
+
+	return rolebinding
+}
+
+//roleBindingForCodewindODO : create Codewind ODO cluster role bindings
+func (r *ReconcileCodewind) roleBindingForCodewindODO(codewind *codewindv1alpha1.Codewind, deploymentOptions DeploymentOptionsCodewind) *rbacv1.ClusterRoleBinding {
+	labels := labelsForCodewindPFE(deploymentOptions)
+	rolebinding := &rbacv1.ClusterRoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1beta1",
+			Kind:       "ClusterRoleBinding",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      deploymentOptions.CodewindODORoleBindingName,
+			Labels:    labels,
+			Namespace: codewind.Namespace,
+		},
+		Subjects: []rbacv1.Subject{
+			rbacv1.Subject{
+				Kind:      "ServiceAccount",
+				Name:      deploymentOptions.CodewindServiceAccountName,
+				Namespace: codewind.Namespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			Kind:     "ClusterRole",
+			Name:     deploymentOptions.CodewindODOClusterRolesName,
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}

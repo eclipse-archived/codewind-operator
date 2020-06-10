@@ -27,7 +27,7 @@ const (
 
 const (
 	// VersionNum : Operator version number
-	VersionNum = "0.0.1"
+	VersionNum = "latest"
 
 	// KeycloakImage is the docker image that will be used in the Codewind-Keycloak pod
 	KeycloakImage = "eclipse/codewind-keycloak-amd64"
@@ -77,6 +77,12 @@ const (
 	// CodewindTektonClusterRolesName : Tekton, cluster role
 	CodewindTektonClusterRolesName = "codewind-tekton"
 
+	// CodewindODOClusterRoleBindingName : ODO, cluster role binding
+	CodewindODOClusterRoleBindingName = "codewind-odo-rolebinding"
+
+	// CodewindODOClusterRolesName : ODO, cluster role
+	CodewindODOClusterRolesName = "codewind-odoclusterrole"
+
 	// CodewindRolesName will include the workspaceID when deployed
 	CodewindRolesName = "eclipse-codewind-" + VersionNum
 )
@@ -99,4 +105,7 @@ const (
 
 	// OperatorConfigMapName : Codewind operator config map name
 	OperatorConfigMapName = "codewind-operator"
+
+	// CodewindFinalizerName : Codewind Cluster role binding finalizer
+	CodewindFinalizerName = "crb.finalizer.codewind.eclipse"
 )

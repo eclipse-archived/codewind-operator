@@ -54,6 +54,8 @@ type DeploymentOptionsCodewind struct {
 	CodewindRoleBindingName             string
 	CodewindTektonClusterRolesName      string
 	CodewindTektonRoleBindingName       string
+	CodewindODOClusterRolesName         string
+	CodewindODORoleBindingName          string
 	CodewindPFEPVCName                  string
 	CodewindServiceAccountName          string
 	CodewindPFEDeploymentName           string
@@ -199,6 +201,8 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		CodewindRoleBindingName:             defaults.CodewindRoleBindingNamePrefix + "-" + workspaceID,
 		CodewindTektonClusterRolesName:      defaults.CodewindTektonClusterRolesName,
 		CodewindTektonRoleBindingName:       defaults.CodewindTektonClusterRoleBindingName + "-" + workspaceID,
+		CodewindODOClusterRolesName:         defaults.CodewindODOClusterRolesName,
+		CodewindODORoleBindingName:          defaults.CodewindODOClusterRoleBindingName + "-" + workspaceID,
 		CodewindPFEPVCName:                  defaults.PrefixCodewindPFE + "-pvc-" + workspaceID,
 		CodewindPFEDeploymentName:           defaults.PrefixCodewindPFE + "-" + workspaceID,
 		CodewindPFEServiceName:              defaults.PrefixCodewindPFE + "-" + workspaceID,
@@ -212,6 +216,23 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		CodewindGatekeeperTLSCertTitle:      "Codewind" + "-" + workspaceID,
 		CodewindGatekeeperSecretAuthName:    "secret-codewind-client-" + workspaceID,
 		CodewindGatekeeperServiceName:       defaults.PrefixCodewindGatekeeper + "-" + workspaceID,
+	}
+
+	// Check if Codewind is being deleted
+	if !codewind.GetDeletionTimestamp().IsZero() {
+
+		// Perform finalizer clean up, then clear the finalizer, then allow this Codewind CR to be deleted
+		if err := r.handleCodewindCRBFinalizer(codewind, deploymentOptions, reqLogger, request); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		//Stop the reconcile
+		return reconcile.Result{}, nil
+	}
+
+	// Add finalizer to this Codewind CR
+	if err := r.addCodewindFinalizer(reqLogger, codewind, request); err != nil {
+		return reconcile.Result{}, err
 	}
 
 	// Check if the Codewind Cluster roles already exist, if not create new ones
@@ -276,6 +297,40 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	} else if err != nil {
 		reqLogger.Error(err, "Failed to get Codewind Tekton ClusterRoleBinding.")
 		return reconcile.Result{}, err
+	}
+
+	if isOpenshift {
+		// Check if the ODO Cluster roles already exist, if not create new ones
+		clusterRolesODO := &rbacv1.ClusterRole{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindODOClusterRolesName, Namespace: ""}, clusterRolesODO)
+		if err != nil && k8serr.IsNotFound(err) {
+			newClusterRoles := r.clusterRolesForCodewindODO(codewind, deploymentOptions)
+			reqLogger.Info("Creating new Codewind ODO cluster roles", "Name", newClusterRoles.Name)
+			err = r.client.Create(context.TODO(), newClusterRoles)
+			if err != nil {
+				reqLogger.Error(err, "Failed to create new Codewind ODO cluster roles.", "Name", newClusterRoles.Name)
+				return reconcile.Result{}, err
+			}
+		} else if err != nil {
+			reqLogger.Error(err, "Failed to get Codewind ODO cluster roles.")
+			return reconcile.Result{}, err
+		}
+
+		// Check if the Codewind ODO Cluster Role Bindings already exist, if not create new ones
+		roleBindingODO := &rbacv1.ClusterRoleBinding{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindODORoleBindingName, Namespace: ""}, roleBindingODO)
+		if err != nil && k8serr.IsNotFound(err) {
+			newODORoleBinding := r.roleBindingForCodewindODO(codewind, deploymentOptions)
+			reqLogger.Info("Creating a new Codewind ODO ClusterRoleBinding", "ServiceAccount", newODORoleBinding.Namespace+":"+deploymentOptions.CodewindServiceAccountName, "Name", newODORoleBinding.Name)
+			err = r.client.Create(context.TODO(), newODORoleBinding)
+			if err != nil {
+				reqLogger.Error(err, "Failed to create new Codewind ODO ClusterRoleBinding.", "ServiceAccount", newODORoleBinding.Namespace+":"+deploymentOptions.CodewindServiceAccountName, "Name", newODORoleBinding.Name)
+				return reconcile.Result{}, err
+			}
+		} else if err != nil {
+			reqLogger.Error(err, "Failed to get Codewind ODO ClusterRoleBinding.")
+			return reconcile.Result{}, err
+		}
 	}
 
 	// Check if the Codewind Service account already exist, if not create new ones
