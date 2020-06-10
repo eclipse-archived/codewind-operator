@@ -49,7 +49,6 @@ var log = logf.Log.WithName("controller_codewind")
 // DeploymentOptionsCodewind : Configuration settings of a Codewind deployment
 type DeploymentOptionsCodewind struct {
 	TektonRoleBindingName               string
-	ODORoleBindingName                  string
 	WorkspaceID                         string
 	CodewindRolesName                   string
 	CodewindRoleBindingName             string
@@ -199,7 +198,6 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		CodewindRolesName:                   defaults.CodewindRolesName,
 		CodewindServiceAccountName:          "codewind-" + workspaceID,
 		TektonRoleBindingName:               defaults.CodewindTektonClusterRoleBindingName + "-" + workspaceID,
-		ODORoleBindingName:                  defaults.CodewindODOClusterRoleBindingName + "-" + workspaceID,
 		CodewindRoleBindingName:             defaults.CodewindRoleBindingNamePrefix + "-" + workspaceID,
 		CodewindTektonClusterRolesName:      defaults.CodewindTektonClusterRolesName,
 		CodewindTektonRoleBindingName:       defaults.CodewindTektonClusterRoleBindingName + "-" + workspaceID,
