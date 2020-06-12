@@ -139,7 +139,7 @@ func (r *ReconcileCodewind) clusterRolesForCodewindODO(codewind *codewindv1alpha
 		rbacv1.PolicyRule{
 			APIGroups: []string{""},
 			Resources: []string{"services"},
-			Verbs:     []string{"get", "list"},
+			Verbs:     []string{"get", "list", "create", "delete", "patch", "update"},
 		},
 		rbacv1.PolicyRule{
 			APIGroups: []string{"route.openshift.io"},
@@ -200,6 +200,11 @@ func (r *ReconcileCodewind) clusterRolesForCodewindODO(codewind *codewindv1alpha
 			APIGroups: []string{"apps.openshift.io"},
 			Resources: []string{"deploymentconfigs"},
 			Verbs:     []string{"create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"},
+		},
+		rbacv1.PolicyRule{
+			APIGroups: []string{"apps"},
+			Resources: []string{"deployments"},
+			Verbs:     []string{"get", "list", "create", "update", "delete", "deletecollection"},
 		},
 	}
 	return &rbacv1.ClusterRole{
