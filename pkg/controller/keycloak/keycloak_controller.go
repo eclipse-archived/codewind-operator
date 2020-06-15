@@ -16,6 +16,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
+	"strings"
 
 	codewindv1alpha1 "github.com/eclipse/codewind-operator/pkg/apis/codewind/v1alpha1"
 	defaults "github.com/eclipse/codewind-operator/pkg/controller/defaults"
@@ -218,17 +220,27 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 		DefaultRealm:        operatorConfigMap.Data["defaultRealm"],
 	}
 
+	// Get the authID from the CR else generate and store a new authID
+	authID := r.getKeycloakAuthID(keycloak)
+	if authID == "" {
+		authID, err = r.setKeycloakAuthID(keycloak)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{Requeue: true}, nil
+	}
+
 	deploymentOptions := DeploymentOptionsKeycloak{
-		KeycloakServiceAccountName: defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
-		KeycloakPVCName:            defaults.PrefixCodewindKeycloak + "-pvc-" + keycloak.Name,
-		KeycloakSecretsName:        "secret-keycloak-user-" + keycloak.Name,
-		KeycloakTLSSecretsName:     "secret-keycloak-tls-" + keycloak.Name,
-		KeycloakTLSCertTitle:       "Keycloak" + "-" + keycloak.Name,
-		KeycloakDeploymentName:     defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
-		KeycloakServiceName:        defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
-		KeycloakIngressName:        defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
-		KeycloakIngressHost:        defaults.PrefixCodewindKeycloak + "-" + keycloak.Name + "." + configMapCodewind.IngressDomain,
-		KeycloakAccessURL:          "https://" + defaults.PrefixCodewindKeycloak + "-" + keycloak.Name + "." + configMapCodewind.IngressDomain,
+		KeycloakServiceAccountName: defaults.PrefixCodewindKeycloak + "-" + authID,
+		KeycloakPVCName:            defaults.PrefixCodewindKeycloak + "-pvc-" + authID,
+		KeycloakSecretsName:        "secret-keycloak-user-" + authID,
+		KeycloakTLSSecretsName:     "secret-keycloak-tls-" + authID,
+		KeycloakTLSCertTitle:       "Keycloak" + "-" + authID,
+		KeycloakDeploymentName:     defaults.PrefixCodewindKeycloak + "-" + authID,
+		KeycloakServiceName:        defaults.PrefixCodewindKeycloak + "-" + authID,
+		KeycloakIngressName:        defaults.PrefixCodewindKeycloak + "-" + authID,
+		KeycloakIngressHost:        defaults.PrefixCodewindKeycloak + "-" + authID + "." + keycloak.Namespace + "." + configMapCodewind.IngressDomain,
+		KeycloakAccessURL:          "https://" + defaults.PrefixCodewindKeycloak + "-" + authID + "." + keycloak.Namespace + "." + configMapCodewind.IngressDomain,
 	}
 
 	// Check if the Keycloak Service account already exist, if not create a new one
@@ -330,7 +342,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.KeycloakServiceName, Namespace: keycloak.Namespace}, service)
 	if err != nil && k8serr.IsNotFound(err) {
 		// Define a new Service object
-		ser := r.serviceForKeycloak(keycloak)
+		ser := r.serviceForKeycloak(keycloak, deploymentOptions)
 		reqLogger.Info("Creating a new Service", "Namespace", ser.Namespace, "Name", ser.Name)
 		err = r.client.Create(context.TODO(), ser)
 		if err != nil && !k8serr.IsAlreadyExists(err) {
@@ -348,7 +360,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 		err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.KeycloakIngressName, Namespace: keycloak.Namespace}, route)
 		if err != nil && k8serr.IsNotFound(err) {
 			// Define a new Route object
-			openshiftRoute := r.routeForKeycloak(keycloak, deploymentOptions, configMapCodewind.IngressDomain)
+			openshiftRoute := r.routeForKeycloak(keycloak, deploymentOptions)
 			reqLogger.Info("Creating a new route", "Namespace", openshiftRoute.Namespace, "Name", openshiftRoute.Name)
 			err = r.client.Create(context.TODO(), openshiftRoute)
 			if err != nil && !k8serr.IsAlreadyExists(err) {
@@ -367,7 +379,7 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 		err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.KeycloakIngressName, Namespace: keycloak.Namespace}, ingress)
 		if err != nil && k8serr.IsNotFound(err) {
 			// Define a new Ingress object
-			ing := r.ingressForKeycloak(keycloak, deploymentOptions, configMapCodewind.IngressDomain)
+			ing := r.ingressForKeycloak(keycloak, deploymentOptions)
 			reqLogger.Info("Creating a new Ingress", "Namespace", ing.Namespace, "Name", ing.Name)
 			err = r.client.Create(context.TODO(), ing)
 			if err != nil && !k8serr.IsAlreadyExists(err) {
@@ -383,12 +395,12 @@ func (r *ReconcileKeycloak) Reconcile(request reconcile.Request) (reconcile.Resu
 	}
 
 	// Update Keycloak default realm
-	reqLogger.Info("Checking Keycloak Pod", "instance", keycloak.Name)
+	reqLogger.Info("Checking Keycloak Pod", "instance", authID)
 	keycloakPod, err := fetchKeycloakPod(r.client, keycloak.Name)
 	if err == nil && keycloakPod != nil {
 		reqLogger.Info("Keycloak Pod status", "phase", keycloakPod.Status.Phase)
 		if keycloakPod.Status.Phase == "Running" {
-			reqLogger.Info("Keycloak Pod", "instance", keycloak.Name, "Phase", keycloakPod.Status.Phase)
+			reqLogger.Info("Keycloak Pod", "instance", authID, "Phase", keycloakPod.Status.Phase)
 			defaultRealm := configMapCodewind.DefaultRealm
 			if keycloak.Status.DefaultRealm != defaultRealm {
 				keycloak.Status.DefaultRealm = defaultRealm
@@ -426,4 +438,24 @@ func fetchKeycloakPod(currentClient client.Client, authDeploymentName string) (*
 	}
 	keycloakPod := keycloaks.Items[0]
 	return &keycloakPod, nil
+}
+
+func (r *ReconcileKeycloak) getKeycloakAuthID(keycloak *codewindv1alpha1.Keycloak) string {
+	authID := keycloak.GetAnnotations()["authID"]
+	return authID
+}
+
+func (r *ReconcileKeycloak) setKeycloakAuthID(keycloak *codewindv1alpha1.Keycloak) (string, error) {
+	newAuthID := strings.ToLower(strconv.FormatInt(util.CreateTimestamp(), 36) + util.GenerateRandomString(4))
+	annotations := keycloak.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+	annotations["authID"] = newAuthID
+	keycloak.SetAnnotations(annotations)
+	err := r.client.Update(context.TODO(), keycloak)
+	if err != nil {
+		return "", err
+	}
+	return newAuthID, nil
 }

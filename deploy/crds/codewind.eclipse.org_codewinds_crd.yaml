@@ -12,6 +12,10 @@ spec:
     description: Deployment namespace
     name: Namespace
     type: string
+  - JSONPath: .metadata.annotations.codewindWorkspace
+    description: WorkspaceID
+    name: Workspace
+    type: string
   - JSONPath: .metadata.creationTimestamp
     description: Age of the resource
     name: Age

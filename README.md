@@ -260,8 +260,8 @@ $ kubectl apply -f ./deploy/crds/codewind.eclipse.org_v1alpha1_keycloak_cr.yaml
 keycloak.codewind.eclipse.org/devex001 created
 
 $ kubectl get keycloaks -n codewind
-NAME       NAMESPACE   AGE   ACCESS
-devex001   codewind    4s    https://codewind-keycloak-devex001.10.98.117.7.nip.io
+NAME       NAMESPACE   AUTHID         AGE   ACCESS
+devex001   codewind    kbc36enhx0cb   6s    https://codewind-keycloak-kbc36enhx0cb.codewind.apps.....195.90.nip.io
 ```
 
 During deployment, the operator creates the following items:
@@ -318,8 +318,8 @@ To see the Keycloak deployment running in the `codewind` namespace and capture i
 
 ```bash
 $ kubectl get keycloaks -n codewind
-NAME       NAMESPACE   AGE     ACCESS
-devex001   codewind    5m22s   https://codewind-keycloak-devex001.10.98.117.7.nip.io
+NAME       NAMESPACE   AUTHID         AGE    ACCESS
+devex001   codewind    kbc36enhx0cb   5m22s  https://codewind-keycloak-kbc36enhx0cb.codewind.apps.....195.90.nip.io
 ```
 
 By default, Keycloak is installed with an admin account where:
@@ -433,8 +433,8 @@ For example:
 
 ```bash
 $ kubectl get codewinds -n codewind jane1
-NAME      USERNAME   NAMESPACE   AGE     KEYCLOAK   REGISTRATION   ACCESSURL
-jane1   jane       codewind    2m23s   devex001   Complete       https://codewind-gatekeeper-cwjane1.10.98.117.7.nip.io
+NAME     USERNAME   NAMESPACE   WORKSPACE      AGE   KEYCLOAK   REGISTRATION   ACCESSURL
+jane1    jane       codewind    kbc3b0x2qins   2d    devex001   Complete       https://codewind-gatekeeper-kbc3b0x2qins.codewind.......90.nip.io
 ```
 
 You can check the status of the Codewind pods with `kubectl get pods -n codewind` to confirm they are in the `Ready` and `Running` phase
@@ -485,8 +485,8 @@ To view all the Codewind deployments in the `codewind` namespace:
 
 ```bash
 $ kubectl get codewinds -n codewind
-NAME                USERNAME   NAMESPACE   AGE   KEYCLOAK   AUTHSTATUS   ACCESSURL
-jane1               jane       codewind    23m   devex001   Completed    https://codewind-gatekeeper-jane1.10.98.117.7.nip.io
+NAME     USERNAME   NAMESPACE   WORKSPACE      AGE   KEYCLOAK   REGISTRATION   ACCESSURL
+jane1    jane       codewind    kbc3b0x2qins   2d    devex001   Complete       https://codewind-gatekeeper-kbc3b0x2qins.codewind.......90.nip.io
 ```
 
 The `kubectl get codewinds` command lists all the running Codewind deployments in the specified namespace. Each line represents a deployment and includes the user name of the developer it is assigned to, the Keycloak service name, and the auth config status. Most importantly, users need their Access URL, which they add to the IDE when creating a connection. Use the `-n` flag to target a specific namespace, for example, `-n codewind`.

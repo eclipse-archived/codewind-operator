@@ -37,6 +37,7 @@ type KeycloakStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=keycloaks,scope=Namespaced
 // +kubebuilder:printcolumn:name="Namespace",type="string",JSONPath=".metadata.namespace",priority=0,description="Deployment namespace"
+// +kubebuilder:printcolumn:name="AuthID",type="string",JSONPath=".metadata.annotations.authID",priority=0,description="Deployment AuthID"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",priority=0,description="Age of the resource"
 // +kubebuilder:printcolumn:name="Access",type="string",JSONPath=".status.url",priority=0,description="Exposed route"
 type Keycloak struct {

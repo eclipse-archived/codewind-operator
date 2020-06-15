@@ -49,11 +49,13 @@ func (r *ReconcileCodewind) removeFinalizers(codewind *codewindv1alpha1.Codewind
 
 // handleCodewindCRBFinalizer : Perform cleanup of cluster role bindings
 func (r *ReconcileCodewind) handleCodewindCRBFinalizer(codewind *codewindv1alpha1.Codewind, deploymentOptions DeploymentOptionsCodewind, reqLogger logr.Logger, request reconcile.Request) error {
+	reqLogger.Info("Processing Finalizer", "namespace", codewind.Namespace, "name", codewind.Name, "finalizer", defaults.CodewindFinalizerName)
 	if len(codewind.GetFinalizers()) == 0 && codewind.GetDeletionTimestamp() == nil {
 		return nil
 	}
 
 	// Delete the ODO CRB
+	reqLogger.Info("Removing ODO CRB", "namespace", codewind.Namespace, "name", deploymentOptions.CodewindODORoleBindingName, "finalizer", defaults.CodewindFinalizerName)
 	crbODO := &rbacv1.ClusterRoleBinding{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindODORoleBindingName, Namespace: ""}, crbODO)
 	if err == nil {
@@ -62,9 +64,11 @@ func (r *ReconcileCodewind) handleCodewindCRBFinalizer(codewind *codewindv1alpha
 			reqLogger.Error(err, "Unable to remove the cluster role binding", "namespace", codewind.Namespace, "name", codewind.Name, "crb", deploymentOptions.CodewindODORoleBindingName)
 			return err
 		}
+		reqLogger.Info("Successfully removed ODO CRB", "namespace", codewind.Namespace, "name", deploymentOptions.CodewindODORoleBindingName, "finalizer", defaults.CodewindFinalizerName)
 	}
 
 	// Delete the Tekton CRB
+	reqLogger.Info("Removing TEKTON CRB", "namespace", codewind.Namespace, "name", deploymentOptions.CodewindTektonRoleBindingName, "finalizer", defaults.CodewindFinalizerName)
 	crbTekton := &rbacv1.ClusterRoleBinding{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploymentOptions.CodewindTektonRoleBindingName, Namespace: ""}, crbTekton)
 	if err == nil {
@@ -73,6 +77,7 @@ func (r *ReconcileCodewind) handleCodewindCRBFinalizer(codewind *codewindv1alpha
 			reqLogger.Error(err, "Unable to remove the cluster role binding", "namespace", codewind.Namespace, "name", codewind.Name, "crb", deploymentOptions.CodewindTektonRoleBindingName)
 			return err
 		}
+		reqLogger.Info("Successfully removed TEKTON CRB", "namespace", codewind.Namespace, "name", deploymentOptions.CodewindTektonRoleBindingName, "finalizer", defaults.CodewindFinalizerName)
 	}
 
 	err = r.removeFinalizers(codewind)
@@ -80,6 +85,7 @@ func (r *ReconcileCodewind) handleCodewindCRBFinalizer(codewind *codewindv1alpha
 		reqLogger.Error(err, "Failed to remove the Codewind finalizer", "namespace", codewind.Namespace, "name", codewind.Name)
 		return err
 	}
+	reqLogger.Info("Finalizer cleared", "namespace", codewind.Namespace, "name", codewind.Name, "finalizer", defaults.CodewindFinalizerName)
 
 	return nil
 }

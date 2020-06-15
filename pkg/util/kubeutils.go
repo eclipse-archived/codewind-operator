@@ -12,6 +12,7 @@
 package util
 
 import (
+	"math/rand"
 	"time"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
@@ -62,10 +63,22 @@ func CreateTimestamp() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
 }
 
+// GetOperatorNamespace : Operator namespace
 func GetOperatorNamespace() string {
 	operatorNamespace, _ := k8sutil.GetOperatorNamespace()
 	if operatorNamespace == "" {
 		operatorNamespace = "codewind"
 	}
 	return operatorNamespace
+}
+
+// GenerateRandomString : Generates random characters
+func GenerateRandomString(length int) string {
+	var options = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+	bytes := make([]rune, length)
+	rand.Seed(time.Now().UTC().UnixNano())
+	for i := range bytes {
+		bytes[i] = options[rand.Intn(len(options))]
+	}
+	return string(bytes)
 }
