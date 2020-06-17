@@ -9,6 +9,10 @@ rules:
     verbs: ["get", "watch", "list", "create", "update", "delete", "patch", "use"]
 
   - apiGroups: [""]
+    resources: ["deployments"]
+    verbs: ["watch", "get","list","create", "update","delete","deletecollection"]
+
+  - apiGroups: [""]
     resources: ["deployments/finalizers"]
     verbs: ["watch", "get","list","create", "update","delete","patch"]
 
@@ -54,7 +58,7 @@ rules:
 
   - apiGroups: [""]
     resources: ["services"]
-    verbs: ["get","list","create","delete","patch","update"]
+    verbs: ["get","list","create","delete","patch","update","deletecollection"]
 
   - apiGroups: [""]
     resources: ["services/finalizers"]
