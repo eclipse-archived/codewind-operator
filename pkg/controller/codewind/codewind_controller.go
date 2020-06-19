@@ -48,6 +48,7 @@ var log = logf.Log.WithName("controller_codewind")
 
 // DeploymentOptionsCodewind : Configuration settings of a Codewind deployment
 type DeploymentOptionsCodewind struct {
+	Name                                string
 	TektonRoleBindingName               string
 	WorkspaceID                         string
 	CodewindRolesName                   string
@@ -192,8 +193,18 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
-	workspaceID := codewind.Name
+	// Get the workspaceID from the CR else generate and store a new workspaceID
+	workspaceID := r.getCodewindWorkspaceID(codewind)
+	if workspaceID == "" {
+		workspaceID, err = r.setCodewindWorkspaceID(codewind)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{Requeue: true}, nil
+	}
+
 	deploymentOptions := DeploymentOptionsCodewind{
+		Name:                                codewind.Name,
 		WorkspaceID:                         workspaceID,
 		CodewindRolesName:                   defaults.CodewindRolesName,
 		CodewindServiceAccountName:          "codewind-" + workspaceID,
@@ -210,7 +221,7 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 		CodewindPerformanceServiceName:      defaults.PrefixCodewindPerformance + "-" + workspaceID,
 		CodewindGatekeeperDeploymentName:    defaults.PrefixCodewindGatekeeper + "-" + workspaceID,
 		CodewindGatekeeperIngressName:       defaults.PrefixCodewindGatekeeper + "-" + workspaceID,
-		CodewindGatekeeperIngressHost:       defaults.PrefixCodewindGatekeeper + "-" + workspaceID + "." + codewindConfigMap.IngressDomain,
+		CodewindGatekeeperIngressHost:       defaults.PrefixCodewindGatekeeper + "-" + workspaceID + "." + codewind.Namespace + "." + codewindConfigMap.IngressDomain,
 		CodewindGatekeeperSecretSessionName: "secret-codewind-session-" + workspaceID,
 		CodewindGatekeeperSecretTLSName:     "secret-codewind-tls-" + workspaceID,
 		CodewindGatekeeperTLSCertTitle:      "Codewind" + "-" + workspaceID,
@@ -373,17 +384,23 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	reqLogger.Info("Found the running Keycloak Pod", "Labels:", keycloakPod.GetLabels())
 
 	// Get the keycloak admin credentials
-	keycloakAdminUser, keycloakAdminPass, err := r.getKeycloakAdminCredentials(codewind.Spec.KeycloakDeployment, keycloakPod.Namespace)
+	authID := keycloakPod.GetLabels()["authID"]
+	if authID == "" {
+		reqLogger.Error(err, "Unable to find AuthID in keycloak pod.", "Namespace", keycloakPod.Namespace, "Name", keycloakPod.Name)
+		return reconcile.Result{}, err
+	}
+
+	keycloakAdminUser, keycloakAdminPass, err := r.getKeycloakAdminCredentials(authID, keycloakPod.Namespace)
 	if err != nil {
 		reqLogger.Error(err, "Unable to retrieve the Keycloak credentials")
 		return reconcile.Result{RequeueAfter: time.Second * 10}, err
 	}
 
 	keycloakRealm := codewindConfigMap.DefaultRealm
-	keycloakAuthHostName := defaults.PrefixCodewindKeycloak + "-" + codewind.Spec.KeycloakDeployment + "." + codewindConfigMap.IngressDomain
+	keycloakAuthHostName := defaults.PrefixCodewindKeycloak + "-" + authID + "." + keycloakPod.Namespace + "." + codewindConfigMap.IngressDomain
 	keycloakAuthURL := "https://" + keycloakAuthHostName
 	keycloakClientID := "codewind-" + deploymentOptions.WorkspaceID
-	gatekeeperPublicURL := "https://" + defaults.PrefixCodewindGatekeeper + "-" + deploymentOptions.WorkspaceID + "." + codewindConfigMap.IngressDomain
+	gatekeeperPublicURL := "https://" + deploymentOptions.CodewindGatekeeperIngressHost
 	clientKey := ""
 
 	// Update Keycloak for user if needed
@@ -603,14 +620,14 @@ func (r *ReconcileCodewind) Reconcile(request reconcile.Request) (reconcile.Resu
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileCodewind) getKeycloakPod(reqLogger logr.Logger, request reconcile.Request, authDeploymentName string) (*corev1.Pod, error) {
+func (r *ReconcileCodewind) getKeycloakPod(reqLogger logr.Logger, request reconcile.Request, authName string) (*corev1.Pod, error) {
 	keycloaks := &corev1.PodList{}
 	opts := []client.ListOption{
-		client.MatchingLabels{"app": defaults.PrefixCodewindKeycloak, "authName": authDeploymentName},
+		client.MatchingLabels{"app": defaults.PrefixCodewindKeycloak, "authName": authName},
 	}
 	err := r.client.List(context.TODO(), keycloaks, opts...)
 	if len(keycloaks.Items) == 0 {
-		err = fmt.Errorf("Unable to find Keycloak authName:'%s'", authDeploymentName)
+		err = fmt.Errorf("Unable to find Keycloak authName:'%s'", authName)
 		return nil, err
 	}
 	keycloakPod := keycloaks.Items[0]
@@ -618,11 +635,31 @@ func (r *ReconcileCodewind) getKeycloakPod(reqLogger logr.Logger, request reconc
 }
 
 // getKeycloakAdminCredentials from the keycloak secret
-func (r *ReconcileCodewind) getKeycloakAdminCredentials(keycloakName string, keycloakNamespace string) (username string, password string, err error) {
+func (r *ReconcileCodewind) getKeycloakAdminCredentials(authID string, keycloakNamespace string) (username string, password string, err error) {
 	secretUser := &corev1.Secret{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "secret-keycloak-user-" + keycloakName, Namespace: keycloakNamespace}, secretUser)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "secret-keycloak-user-" + authID, Namespace: keycloakNamespace}, secretUser)
 	if err != nil {
 		return "", "", err
 	}
 	return string(secretUser.Data["keycloak-admin-user"]), string(secretUser.Data["keycloak-admin-password"]), nil
+}
+
+func (r *ReconcileCodewind) getCodewindWorkspaceID(codewind *codewindv1alpha1.Codewind) string {
+	workspaceID := codewind.GetAnnotations()["codewindWorkspace"]
+	return workspaceID
+}
+
+func (r *ReconcileCodewind) setCodewindWorkspaceID(codewind *codewindv1alpha1.Codewind) (string, error) {
+	newWorkspaceID := strings.ToLower(strconv.FormatInt(util.CreateTimestamp(), 36) + util.GenerateRandomString(4))
+	annotations := codewind.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+	annotations["codewindWorkspace"] = newWorkspaceID
+	codewind.SetAnnotations(annotations)
+	err := r.client.Update(context.TODO(), codewind)
+	if err != nil {
+		return "", err
+	}
+	return newWorkspaceID, nil
 }

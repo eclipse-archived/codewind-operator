@@ -132,11 +132,11 @@ func (r *ReconcileKeycloak) secretsTLSForKeycloak(keycloak *codewindv1alpha1.Key
 }
 
 // serviceForKeycloak function takes in a Keycloak object and returns a Service for that object.
-func (r *ReconcileKeycloak) serviceForKeycloak(keycloak *codewindv1alpha1.Keycloak) *corev1.Service {
+func (r *ReconcileKeycloak) serviceForKeycloak(keycloak *codewindv1alpha1.Keycloak, deploymentOptions DeploymentOptionsKeycloak) *corev1.Service {
 	ls := labelsForKeycloak(keycloak)
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaults.PrefixCodewindKeycloak + "-" + keycloak.Name,
+			Name:      deploymentOptions.KeycloakServiceName,
 			Namespace: keycloak.Namespace,
 			Labels:    ls,
 		},
@@ -201,12 +201,12 @@ func (r *ReconcileKeycloak) deploymentForKeycloak(keycloak *codewindv1alpha1.Key
 							{
 								Name: "KEYCLOAK_USER",
 								ValueFrom: &corev1.EnvVarSource{
-									SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "secret-keycloak-user" + "-" + keycloak.Name}, Key: "keycloak-admin-user"}},
+									SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: deploymentOptions.KeycloakSecretsName}, Key: "keycloak-admin-user"}},
 							},
 							{
 								Name: "KEYCLOAK_PASSWORD",
 								ValueFrom: &corev1.EnvVarSource{
-									SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "secret-keycloak-user" + "-" + keycloak.Name}, Key: "keycloak-admin-password"}},
+									SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: deploymentOptions.KeycloakSecretsName}, Key: "keycloak-admin-password"}},
 							},
 							{
 								Name:  "PROXY_ADDRESS_FORWARDING",
@@ -231,7 +231,7 @@ func (r *ReconcileKeycloak) deploymentForKeycloak(keycloak *codewindv1alpha1.Key
 }
 
 // serviceForKeycloak function takes in a Keycloak object and returns a Service for that object.
-func (r *ReconcileKeycloak) routeForKeycloak(keycloak *codewindv1alpha1.Keycloak, deploymentOptions DeploymentOptionsKeycloak, ingressDomain string) *routev1.Route {
+func (r *ReconcileKeycloak) routeForKeycloak(keycloak *codewindv1alpha1.Keycloak, deploymentOptions DeploymentOptionsKeycloak) *routev1.Route {
 	ls := labelsForKeycloak(keycloak)
 	weight := int32(100)
 	annotations := map[string]string{
@@ -252,7 +252,7 @@ func (r *ReconcileKeycloak) routeForKeycloak(keycloak *codewindv1alpha1.Keycloak
 			Labels:      ls,
 		},
 		Spec: routev1.RouteSpec{
-			Host: defaults.PrefixCodewindKeycloak + "-" + keycloak.Name + "." + ingressDomain,
+			Host: deploymentOptions.KeycloakIngressHost,
 			Port: &routev1.RoutePort{
 				TargetPort: intstr.FromInt(defaults.KeycloakContainerPort),
 			},
@@ -274,7 +274,7 @@ func (r *ReconcileKeycloak) routeForKeycloak(keycloak *codewindv1alpha1.Keycloak
 }
 
 // serviceForKeycloak function takes in a Keycloak object and returns a Service for that object.
-func (r *ReconcileKeycloak) ingressForKeycloak(keycloak *codewindv1alpha1.Keycloak, deploymentOptions DeploymentOptionsKeycloak, ingressDomain string) *extv1beta1.Ingress {
+func (r *ReconcileKeycloak) ingressForKeycloak(keycloak *codewindv1alpha1.Keycloak, deploymentOptions DeploymentOptionsKeycloak) *extv1beta1.Ingress {
 	ls := labelsForKeycloak(keycloak)
 	annotations := map[string]string{
 		"nginx.ingress.kubernetes.io/rewrite-target":     "/",
@@ -296,13 +296,13 @@ func (r *ReconcileKeycloak) ingressForKeycloak(keycloak *codewindv1alpha1.Keyclo
 		Spec: extv1beta1.IngressSpec{
 			TLS: []extv1beta1.IngressTLS{
 				{
-					Hosts:      []string{defaults.PrefixCodewindKeycloak + "-" + keycloak.Name + "." + ingressDomain},
-					SecretName: "secret-keycloak-tls" + "-" + keycloak.Name,
+					Hosts:      []string{deploymentOptions.KeycloakIngressHost},
+					SecretName: deploymentOptions.KeycloakTLSSecretsName,
 				},
 			},
 			Rules: []extv1beta1.IngressRule{
 				{
-					Host: defaults.PrefixCodewindKeycloak + "-" + keycloak.Name + "." + ingressDomain,
+					Host: deploymentOptions.KeycloakIngressHost,
 					IngressRuleValue: extv1beta1.IngressRuleValue{
 						HTTP: &extv1beta1.HTTPIngressRuleValue{
 							Paths: []extv1beta1.HTTPIngressPath{
@@ -329,5 +329,5 @@ func (r *ReconcileKeycloak) ingressForKeycloak(keycloak *codewindv1alpha1.Keyclo
 // labelsForKeycloak returns the labels for selecting the resources
 // belonging to the given keycloak CR name.
 func labelsForKeycloak(keycloak *codewindv1alpha1.Keycloak) map[string]string {
-	return map[string]string{"app": defaults.PrefixCodewindKeycloak, "authName": keycloak.Name}
+	return map[string]string{"app": defaults.PrefixCodewindKeycloak, "authName": keycloak.Name, "authID": keycloak.GetAnnotations()["authID"]}
 }

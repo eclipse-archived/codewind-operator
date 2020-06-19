@@ -8,6 +8,10 @@ spec:
     description: Deployment namespace
     name: Namespace
     type: string
+  - JSONPath: .metadata.annotations.authID
+    description: Deployment AuthID
+    name: AuthID
+    type: string
   - JSONPath: .metadata.creationTimestamp
     description: Age of the resource
     name: Age

@@ -630,13 +630,13 @@ func (r *ReconcileCodewind) buildGatekeeperSecretAuth(codewind *codewindv1alpha1
 // labelsForCodewindPFE returns the labels for selecting the resources
 // belonging to the given codewind CR name.
 func labelsForCodewindPFE(deploymentOptions DeploymentOptionsCodewind) map[string]string {
-	return map[string]string{"app": defaults.PrefixCodewindPFE, "codewindWorkspace": deploymentOptions.WorkspaceID}
+	return map[string]string{"app": defaults.PrefixCodewindPFE, "codewindWorkspace": deploymentOptions.WorkspaceID, "codewindName": deploymentOptions.Name}
 }
 
 func labelsForCodewindPerformance(deploymentOptions DeploymentOptionsCodewind) map[string]string {
-	return map[string]string{"app": defaults.PrefixCodewindPerformance, "codewindWorkspace": deploymentOptions.WorkspaceID}
+	return map[string]string{"app": defaults.PrefixCodewindPerformance, "codewindWorkspace": deploymentOptions.WorkspaceID, "codewindName": deploymentOptions.Name}
 }
 
 func labelsForCodewindGatekeeper(deploymentOptions DeploymentOptionsCodewind) map[string]string {
-	return map[string]string{"app": defaults.PrefixCodewindGatekeeper, "codewindWorkspace": deploymentOptions.WorkspaceID}
+	return map[string]string{"app": defaults.PrefixCodewindGatekeeper, "codewindWorkspace": deploymentOptions.WorkspaceID, "codewindName": deploymentOptions.Name}
 }

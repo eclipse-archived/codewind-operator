@@ -55,6 +55,7 @@ type CodewindStatus struct {
 // +kubebuilder:resource:path=codewinds,scope=Namespaced
 // +kubebuilder:printcolumn:name="Username",type="string",JSONPath=".spec.username",priority=0,description="Deployment reference name"
 // +kubebuilder:printcolumn:name="Namespace",type="string",JSONPath=".metadata.namespace",priority=0,description="Deployment namespace"
+// +kubebuilder:printcolumn:name="Workspace",type="string",JSONPath=".metadata.annotations.codewindWorkspace",priority=0,description="WorkspaceID"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",priority=0,description="Age of the resource"
 // +kubebuilder:printcolumn:name="Keycloak",type="string",JSONPath=".spec.keycloakDeployment",priority=0,description="Deployment reference name"
 // +kubebuilder:printcolumn:name="Registration",type="string",JSONPath=".status.keycloakStatus",priority=0,description="Keycloak configuration status"

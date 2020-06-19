@@ -7,6 +7,10 @@ FLG_OC311=false
 FLG_CW_USERNAME=""
 FLG_CW_NAME=""
 
+## Defaults
+FLG_NAMESPACE="codewind"
+FLG_AUTHSERVICE="devex001"
+
 function helpOperatorFlags() {
   echo "  flags for 'operator' command:"
   echo "    -i                   ingress domain eg 172.15.41.1.nip.io"
@@ -64,7 +68,7 @@ function installOperator() {
     echo "Target Openshift 311: $FLG_OC311"
 
     echo "Creating Codewind namespace:"
-    kubectl create namespace codewind
+    kubectl create namespace $FLG_NAMESPACE
 
     echo "Deploying Operator Service Account:"
     kubectl apply -f service_account.yaml
@@ -116,7 +120,7 @@ function installOperator() {
     cd ..
 
     echo "Reading Keycloak deployments"
-    kubectl get keycloaks -n codewind
+    kubectl get keycloaks -n $FLG_NAMESPACE
 
     containerRunning=false
     lastContainerStatus="unknown"
@@ -124,7 +128,7 @@ function installOperator() {
     echo "Waiting for keycloak (may take a few minutes Pending->ContainerCreating->Running)"
     while [ $containerRunning != true ]
     do
-      containerStatus=$(kubectl get pods -n codewind | grep keycloak | awk '{print $3}')
+      containerStatus=$(kubectl get pods --no-headers -n $FLG_NAMESPACE -l app=codewind-keycloak,authName=$FLG_AUTHSERVICE | awk '{print $3}')
 
       if [[ $lastContainerStatus != $containerStatus ]]
       then
@@ -140,7 +144,7 @@ function installOperator() {
       fi
     done
     echo ""
-    kubectl get keycloaks -n codewind
+    kubectl get keycloaks -n $FLG_NAMESPACE
 }
 
 function installCodewind() {
@@ -182,9 +186,9 @@ function installCodewind() {
 
     head -n15 codewind.eclipse.org_v1alpha1_codewind_cr.yaml > custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
     echo "  name: "$FLG_CW_NAME >> custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
-    echo "  namespace: codewind" >> custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
+    echo "  namespace: "$FLG_NAMESPACE >> custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
     echo "spec:"  >> custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
-    echo "  keycloakDeployment: devex001"  >> custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
+    echo "  keycloakDeployment: "$FLG_AUTHSERVICE  >> custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
     echo "  username: "$FLG_CW_USERNAME >> custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
     tail -n2 codewind.eclipse.org_v1alpha1_codewind_cr.yaml >> custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml 
     kubectl apply -f custom-codewind.eclipse.org_v1alpha1_codewind_cr.yaml
@@ -194,11 +198,10 @@ function installCodewind() {
 
     containerRunning=false
     lastContainerStatus="unknown"
-    pfeName="codewind-pfe-"$FLG_CW_NAME
     echo "Waiting for codewind (may take a few minutes, expected phases: Pending->ContainerCreating->Running)"
     while [ $containerRunning != true ]
     do
-       containerStatus=$(kubectl get pods -n codewind | grep $pfeName | awk '{print $3}')
+       containerStatus=$(kubectl get pods --no-headers -n $FLG_NAMESPACE -l app=codewind-pfe,codewindName=$FLG_CW_NAME | awk '{print $3}')
        if [[ $lastContainerStatus != $containerStatus ]]
        then
          echo 'codewind: ' $containerStatus
@@ -214,7 +217,7 @@ function installCodewind() {
     done
 
     echo ""
-    kubectl get codewinds $FLG_CW_NAME -n codewind
+    kubectl get codewinds $FLG_CW_NAME -n $FLG_NAMESPACE
     exit
 }
 
