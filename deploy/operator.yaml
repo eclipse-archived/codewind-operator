@@ -27,7 +27,7 @@ spec:
       serviceAccountName: codewind-operator
       containers:
         - name: codewind-operator
-          image: eclipse/codewind-operator-amd64:latest
+          image: eclipse/codewind-operator-amd64:0.14.0
           command:
           - codewind-operator
           imagePullPolicy: Always
